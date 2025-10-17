@@ -8,9 +8,11 @@ import pygame_gui
 import sys
 import threading
 import time
+import numpy as np
 from typing import Dict, Optional, Any
 from ..audio import AudioAnalyzer
-from ..visualization import VisualizationEngine, ColorPalette
+from ..visualization import VisualizationEngine, ColorPalette, RealtimeAudioVisualizer
+from ..visualization.standard_visualizer import StandardAudioVisualizer
 from ..storage import DataStorage
 
 
@@ -43,8 +45,14 @@ class SingleModeInterface:
         
         # Components
         self.audio_analyzer = None
-        self.visualization_engine = VisualizationEngine(width - 300, height - 50)
+        self.visualization_engine = VisualizationEngine(width - 650, height - 300)
+        self.realtime_visualizer = RealtimeAudioVisualizer(width - 650, 250)
+        self.standard_visualizer = StandardAudioVisualizer(width - 650, 400, num_bars=64)
         self.data_storage = DataStorage(data_dir)
+        
+        # Audio data storage for visualization
+        self.current_audio_data = np.array([])
+        self.current_metrics = {}
         
         # State
         self.is_recording = False
@@ -61,12 +69,19 @@ class SingleModeInterface:
         
     def setup_ui(self):
         """Setup the user interface elements"""
-        panel_x = self.width - 290
+        # Improved layout: Left side for visualization, right side for controls and audio charts
+        control_panel_width = 320
+        panel_x = self.width - control_panel_width
         
         # Control Panel Background
         self.ui_elements['control_panel'] = pygame_gui.elements.UIPanel(
-            relative_rect=pygame.Rect(panel_x, 10, 280, self.height - 20),
-            starting_layer_height=0,
+            relative_rect=pygame.Rect(panel_x, 10, control_panel_width - 10, self.height - 20),
+            manager=self.ui_manager
+        )
+        
+        # Audio Charts Panel (bottom left)
+        self.ui_elements['audio_charts_panel'] = pygame_gui.elements.UIPanel(
+            relative_rect=pygame.Rect(10, self.height - 260, self.width - control_panel_width - 20, 250),
             manager=self.ui_manager
         )
         
@@ -99,35 +114,44 @@ class SingleModeInterface:
             manager=self.ui_manager
         )
         
-        # Recording Controls
+        # Recording Controls - Enlarged buttons
         y_pos += 50
         self.ui_elements['start_recording'] = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect(panel_x + 10, y_pos, 120, 35),
-            text='Start Recording',
+            relative_rect=pygame.Rect(panel_x + 10, y_pos, 145, 45),
+            text='🔴 Start\nRecording',
             manager=self.ui_manager
         )
         
         self.ui_elements['stop_recording'] = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect(panel_x + 140, y_pos, 120, 35),
-            text='Stop Recording',
+            relative_rect=pygame.Rect(panel_x + 165, y_pos, 145, 45),
+            text='⏹️ Stop\nRecording',
             manager=self.ui_manager
         )
         self.ui_elements['stop_recording'].disable()
         
-        # Audio Controls
-        y_pos += 50
+        # Audio Controls  
+        y_pos += 55
         self.ui_elements['start_audio'] = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect(panel_x + 10, y_pos, 120, 35),
-            text='Start Audio',
+            relative_rect=pygame.Rect(panel_x + 10, y_pos, 145, 45),
+            text='🎵 Start\nAudio',
             manager=self.ui_manager
         )
         
         self.ui_elements['stop_audio'] = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect(panel_x + 140, y_pos, 120, 35),
-            text='Stop Audio',
+            relative_rect=pygame.Rect(panel_x + 165, y_pos, 145, 45),
+            text='🔇 Stop\nAudio',
             manager=self.ui_manager
         )
         self.ui_elements['stop_audio'].disable()
+        
+        # Save Controls
+        y_pos += 55
+        self.ui_elements['save_recording'] = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(panel_x + 10, y_pos, 300, 45),
+            text='💾 Save Recording & Visualization',
+            manager=self.ui_manager
+        )
+        self.ui_elements['save_recording'].disable()
         
         # Visualization Settings
         y_pos += 60
@@ -294,11 +318,13 @@ class SingleModeInterface:
             self.start_recording()
         elif button == self.ui_elements['stop_recording']:
             self.stop_recording()
-        elif button == self.ui_elements['particles_check']:
+        elif button == self.ui_elements.get('save_recording'):
+            self.save_recording()
+        elif button == self.ui_elements.get('particles_check'):
             self.toggle_particles()
-        elif button == self.ui_elements['wave_check']:
+        elif button == self.ui_elements.get('wave_check'):
             self.toggle_wave()
-        elif button == self.ui_elements['symmetry_check']:
+        elif button == self.ui_elements.get('symmetry_check'):
             self.toggle_symmetry()
             
     def handle_dropdown_change(self, dropdown):
@@ -368,6 +394,8 @@ class SingleModeInterface:
             
             if record_id:
                 print(f"Recording saved with ID: {record_id}")
+                # Enable save button after successful recording
+                self.ui_elements['save_recording'].enable()
             else:
                 print("Failed to save recording")
                 
@@ -375,6 +403,42 @@ class SingleModeInterface:
         
         self.ui_elements['start_recording'].enable()
         self.ui_elements['stop_recording'].disable()
+        
+    def save_recording(self):
+        """Save current recording and visualization data"""
+        user_name = self.ui_elements['user_input'].get_text() or "Anonymous"
+        title = self.ui_elements['title_input'].get_text() or f"Recording_{int(time.time())}"
+        
+        try:
+            # Get current visualization settings
+            settings = self.visualization_engine.get_settings()
+            
+            # Create a recording entry
+            record_data = {
+                'user_name': user_name,
+                'title': title,
+                'timestamp': time.time(),
+                'visualization_settings': settings,
+                'audio_metrics': self.current_metrics,
+                'tags': ['live_recording']
+            }
+            
+            # Save to storage
+            success = self.data_storage.save_recording(record_data)
+            
+            if success:
+                print(f"✅ Recording '{title}' by {user_name} saved successfully!")
+                # Show success feedback
+                self.ui_elements['save_recording'].set_text('✅ Saved Successfully!')
+                # Reset button after 2 seconds (in a real implementation)
+                pygame.time.set_timer(pygame.USEREVENT + 1, 2000)
+            else:
+                print("❌ Failed to save recording")
+                self.ui_elements['save_recording'].set_text('❌ Save Failed')
+                
+        except Exception as e:
+            print(f"Error saving recording: {e}")
+            self.ui_elements['save_recording'].set_text('❌ Save Error')
         
     def toggle_particles(self):
         """Toggle particle effects"""
@@ -393,24 +457,43 @@ class SingleModeInterface:
         
     def audio_callback(self, metrics: Dict[str, float]):
         """
-        Callback function for audio data
+        Callback function for real-time audio data processing
         
         Args:
             metrics: Audio metrics from analyzer
         """
-        # Update visualization
-        normalized_metrics = self.audio_analyzer.get_normalized_metrics()
-        self.visualization_engine.update_from_audio(normalized_metrics)
+        # Store current metrics for immediate use
+        self.current_metrics = metrics
+        
+        # Get latest audio data for real-time visualization
+        if self.audio_analyzer:
+            audio_data_chunks = self.audio_analyzer.get_audio_data()
+            if audio_data_chunks and len(audio_data_chunks) > 0:
+                # Always use the most recent audio chunk
+                latest_chunk = audio_data_chunks[-1]
+                self.current_audio_data = [latest_chunk] if not isinstance(self.current_audio_data, list) else self.current_audio_data
+                
+                # Keep only recent chunks for smooth visualization
+                self.current_audio_data.append(latest_chunk)
+                if len(self.current_audio_data) > 10:  # Keep last 10 chunks
+                    self.current_audio_data.pop(0)
+                
+                # Update standard visualizer with latest audio data for real-time response
+                if hasattr(self, 'standard_visualizer'):
+                    self.standard_visualizer.update(latest_chunk)
+        
+        # Update main visualization engine with normalized metrics for animated effects
+        normalized_metrics = self.audio_analyzer.get_normalized_metrics() if self.audio_analyzer else {}
+        if normalized_metrics:
+            self.visualization_engine.update_from_audio(normalized_metrics)
         
         # Update UI displays
         self.update_metrics_display(metrics)
         
         # Add to recording if active
         if self.recording_session_active and self.audio_analyzer:
-            audio_data = self.audio_analyzer.get_audio_data()
-            if audio_data:
-                latest_chunk = audio_data[-1]
-                self.data_storage.add_audio_data(latest_chunk, metrics)
+            if len(self.current_audio_data) > 0:
+                self.data_storage.add_audio_data(self.current_audio_data, metrics)
                 
     def update_metrics_display(self, metrics: Dict[str, float]):
         """Update the audio metrics display"""
@@ -430,6 +513,16 @@ class SingleModeInterface:
             f"Frequency: {metrics.get('frequency', 0):.0f} Hz"
         )
         
+    def draw_background(self):
+        """Draw a stylish gradient background"""
+        for y in range(self.height):
+            # Create gradient from dark blue-gray to black
+            ratio = y / self.height
+            r = int(15 * (1 - ratio))
+            g = int(20 * (1 - ratio))
+            b = int(30 * (1 - ratio))
+            pygame.draw.line(self.screen, (r, g, b), (0, y), (self.width, y))
+        
     def run(self):
         """Main application loop"""
         while self.running:
@@ -441,13 +534,30 @@ class SingleModeInterface:
             # Update UI
             self.ui_manager.update(time_delta)
             
-            # Clear screen
-            self.screen.fill((20, 20, 20))
+            # Clear screen with gradient background
+            self.draw_background()
             
-            # Render visualization
-            vis_surface = pygame.Surface((self.width - 300, self.height))
+            # Calculate layout dimensions
+            control_panel_width = 320
+            chart_height = 250
+            vis_width = self.width - control_panel_width - 20
+            vis_height = self.height - chart_height - 30
+            
+            # Render main visualization (top left)
+            vis_surface = pygame.Surface((vis_width, vis_height))
+            vis_surface.fill((25, 25, 35))  # Dark background for vis
             self.visualization_engine.render(vis_surface)
-            self.screen.blit(vis_surface, (0, 0))
+            self.screen.blit(vis_surface, (10, 10))
+            
+            # Render real-time audio charts (bottom left) - Use standard visualizer
+            if len(self.current_audio_data) > 0:
+                # Update standard visualizer with latest audio data
+                latest_chunk = self.current_audio_data[-1] if self.current_audio_data else np.array([])
+                if len(latest_chunk) > 0:
+                    self.standard_visualizer.update(latest_chunk)
+                
+                # Draw standard visualizer
+                self.standard_visualizer.draw(self.screen, 10, self.height - chart_height - 50)
             
             # Add visual frame to recording if active
             if self.recording_session_active:

@@ -29,17 +29,43 @@ class AudioPerceptionLauncher:
     """Main launcher for the Audio Perception application"""
     
     def __init__(self):
-        """Initialize the launcher"""
+        """Initialize the launcher with modern design"""
         pygame.init()
         
-        self.width = 800
-        self.height = 600
+        # Modern app dimensions - larger for better user experience
+        self.width = 1200
+        self.height = 800
         
+        # Create main window with modern styling
         self.screen = pygame.display.set_mode((self.width, self.height))
-        pygame.display.set_caption("Audio Perception - Welcome")
+        pygame.display.set_caption("Audio Perception Studio - Professional Audio Visualization Platform")
+        
+        # Set window icon (if available)
+        try:
+            icon = pygame.Surface((32, 32))
+            icon.fill((74, 144, 226))
+            pygame.display.set_icon(icon)
+        except:
+            pass
         
         self.clock = pygame.time.Clock()
         self.running = True
+        
+        # Modern color scheme
+        self.colors = {
+            'primary': (74, 144, 226),      # Modern blue
+            'secondary': (108, 92, 231),    # Purple accent
+            'success': (16, 185, 129),      # Green
+            'warning': (245, 158, 11),      # Orange
+            'danger': (239, 68, 68),        # Red
+            'dark': (17, 24, 39),           # Dark gray
+            'light': (243, 244, 246),       # Light gray
+            'white': (255, 255, 255),
+            'text_primary': (17, 24, 39),
+            'text_secondary': (107, 114, 128),
+            'gradient_start': (74, 144, 226),
+            'gradient_end': (108, 92, 231)
+        }
         
         # UI Manager
         self.ui_manager = pygame_gui.UIManager((self.width, self.height))
@@ -49,68 +75,35 @@ class AudioPerceptionLauncher:
         self.setup_ui()
         
     def setup_ui(self):
-        """Setup the launcher UI"""
-        # Background panel
-        self.ui_elements['main_panel'] = pygame_gui.elements.UIPanel(
-            relative_rect=pygame.Rect(50, 50, self.width - 100, self.height - 100),
-            starting_layer_height=0,
-            manager=self.ui_manager
-        )
-        
-        # Title
+        """Setup minimal launcher UI with just two main buttons"""
+        # App title - clean and centered
         self.ui_elements['title'] = pygame_gui.elements.UILabel(
-            relative_rect=pygame.Rect(100, 100, self.width - 200, 60),
-            text='Audio Perception',
+            relative_rect=pygame.Rect(0, 150, self.width, 80),
+            text='Audio Perception Studio',
             manager=self.ui_manager
         )
         
-        # Subtitle
-        self.ui_elements['subtitle'] = pygame_gui.elements.UILabel(
-            relative_rect=pygame.Rect(100, 170, self.width - 200, 40),
-            text='Dynamic Audio Visualization System',
-            manager=self.ui_manager
-        )
+        # Main action buttons - large and prominent
+        button_width = 400
+        button_height = 120
+        button_spacing = 80
+        button_y = 350
         
-        # Description
-        description_text = (
-            "Transform sound into stunning visual experiences!\n\n"
-            "• Real-time audio analysis and visualization\n"
-            "• Customizable visual effects and parameters\n"
-            "• Record and share your audio-visual creations\n"
-            "• Explore visualizations from other users"
-        )
+        # Calculate button positions for perfect centering
+        total_width = 2 * button_width + button_spacing
+        start_x = (self.width - total_width) // 2
         
-        self.ui_elements['description'] = pygame_gui.elements.UITextBox(
-            relative_rect=pygame.Rect(100, 230, self.width - 200, 150),
-            html_text=description_text.replace('\n', '<br>'),
-            manager=self.ui_manager
-        )
-        
-        # Mode Selection Buttons
-        button_width = 200
-        button_height = 50
-        button_y = 400
-        
-        # Single Mode Button
-        single_x = (self.width // 2) - button_width - 20
+        # Studio Mode Button - Create and visualize
         self.ui_elements['single_mode_btn'] = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect(single_x, button_y, button_width, button_height),
-            text='Single Mode\n(Individual Recording)',
+            relative_rect=pygame.Rect(start_x, button_y, button_width, button_height),
+            text='STUDIO',
             manager=self.ui_manager
         )
         
-        # Multiple Mode Button
-        multi_x = (self.width // 2) + 20
+        # Gallery Mode Button - Explore and view
         self.ui_elements['multi_mode_btn'] = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect(multi_x, button_y, button_width, button_height),
-            text='Gallery Mode\n(View All Recordings)',
-            manager=self.ui_manager
-        )
-        
-        # Exit Button
-        self.ui_elements['exit_btn'] = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((self.width // 2) - 75, 480, 150, 40),
-            text='Exit',
+            relative_rect=pygame.Rect(start_x + button_width + button_spacing, button_y, button_width, button_height),
+            text='GALLERY',
             manager=self.ui_manager
         )
         
@@ -121,7 +114,7 @@ class AudioPerceptionLauncher:
         )
         
         self.ui_elements['instructions'] = pygame_gui.elements.UITextBox(
-            relative_rect=pygame.Rect(100, 540, self.width - 200, 50),
+            relative_rect=pygame.Rect(100, 540, self.width - 200, 200),
             html_text=instructions.replace('\n', '<br>'),
             manager=self.ui_manager
         )
@@ -133,9 +126,8 @@ class AudioPerceptionLauncher:
                 self.running = False
                 
             # Handle UI events
-            if event.type == pygame.USEREVENT:
-                if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                    self.handle_button_press(event.ui_element)
+            if event.type == pygame_gui.UI_BUTTON_PRESSED:
+                self.handle_button_press(event.ui_element)
                     
             self.ui_manager.process_events(event)
             
@@ -145,45 +137,78 @@ class AudioPerceptionLauncher:
             self.launch_single_mode()
         elif button == self.ui_elements['multi_mode_btn']:
             self.launch_multi_mode()
-        elif button == self.ui_elements['exit_btn']:
-            self.running = False
+    
+    def show_help(self):
+        """Show help and settings dialog"""
+        # TODO: Implement help/settings dialog
+        print("Help & Settings - Coming soon!")
+        print("For now, here are the basics:")
+        print("- Studio Mode: Real-time audio visualization creation")
+        print("- Gallery Mode: Browse saved recordings")
+        print("- Make noise into your microphone to see visualizations!")
+        
+    def draw_modern_background(self):
+        """Draw a clean, minimal background"""
+        # Simple gradient background
+        for y in range(self.height):
+            ratio = y / self.height
+            # Deep blue to dark purple gradient
+            r = int(20 * (1 - ratio) + 40 * ratio)
+            g = int(25 * (1 - ratio) + 20 * ratio)
+            b = int(60 * (1 - ratio) + 80 * ratio)
+            
+            pygame.draw.line(self.screen, (r, g, b), (0, y), (self.width, y))
             
     def launch_single_mode(self):
-        """Launch single mode interface"""
-        print("Launching Single Mode...")
+        """Launch creative studio mode"""
+        print("Launching Creative Studio...")
         pygame.quit()
         
         try:
             # Create data directory if it doesn't exist
             data_dir = os.path.join(os.path.dirname(__file__), 'data')
+            os.makedirs(data_dir, exist_ok=True)
             
-            app = SingleModeInterface(data_dir=data_dir)
+            from src.ui.creative_studio import CreativeStudioInterface
+            # Launch creative studio with full-screen experience
+            app = CreativeStudioInterface(width=1600, height=1000)
             app.run()
         except Exception as e:
-            print(f"Error launching Single Mode: {e}")
-            print("Make sure all required packages are installed:")
-            print("pip install pygame pygame-gui pyaudio numpy")
+            print(f"Error launching Creative Studio: {e}")
+            import traceback
+            traceback.print_exc()
         finally:
-            # Return to launcher
+            # Reinitialize after studio closes
+            pygame.init()
             self.__init__()
             
     def launch_multi_mode(self):
-        """Launch multiple mode interface"""
-        print("Launching Gallery Mode...")
-        pygame.quit()
+        """Launch creative gallery mode"""
+        print("Launching Creative Gallery...")
         
         try:
             # Create data directory if it doesn't exist
             data_dir = os.path.join(os.path.dirname(__file__), 'data')
+            os.makedirs(data_dir, exist_ok=True)
             
-            app = MultiModeInterface(data_dir=data_dir)
+            # Close current pygame instance properly
+            pygame.quit()
+            
+            # Import and run creative gallery
+            from src.ui.creative_gallery import CreativeGalleryInterface
+            app = CreativeGalleryInterface(width=1600, height=1000, data_dir=data_dir)
             app.run()
+            
+            # After gallery closes, restart the main menu
+            pygame.init()
+            self.__init__()
+            
         except Exception as e:
-            print(f"Error launching Gallery Mode: {e}")
-            print("Make sure all required packages are installed:")
-            print("pip install pygame pygame-gui pyaudio numpy")
-        finally:
-            # Return to launcher
+            print(f"Error launching Creative Gallery: {e}")
+            import traceback
+            traceback.print_exc()
+            # Ensure pygame is reinitialized if there was an error
+            pygame.init()
             self.__init__()
             
     def run(self):
@@ -197,8 +222,8 @@ class AudioPerceptionLauncher:
             # Update UI
             self.ui_manager.update(time_delta)
             
-            # Clear screen with gradient background
-            self.draw_gradient_background()
+            # Clear screen with modern gradient background
+            self.draw_modern_background()
             
             # Render UI
             self.ui_manager.draw_ui(self.screen)

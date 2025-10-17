@@ -11,7 +11,7 @@ import time
 import os
 from typing import Dict, List, Optional, Any, Tuple
 from ..storage import DataStorage, AudioRecord
-from ..visualization import VisualizationEngine
+from ..visualization import VisualizationEngine, RealtimeAudioVisualizer
 from ..audio import AudioAnalyzer
 
 
@@ -68,7 +68,6 @@ class MultiModeInterface:
         list_width = 350
         self.ui_elements['list_panel'] = pygame_gui.elements.UIPanel(
             relative_rect=pygame.Rect(10, 10, list_width, self.height - 20),
-            starting_layer_height=0,
             manager=self.ui_manager
         )
         

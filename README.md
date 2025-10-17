@@ -1,33 +1,31 @@
-# Audio Perception - Dynamic Audio Visualization System
+# 🎨 Creative Audio Visualization System
 
-A real-time audio visualization application that captures sound using PyAudio and creates stunning dynamic visualizations based on audio metrics like amplitude, RMS, peak amplitude, and decibel levels.
+A dynamic real-time audio visualization application that transforms microphone input into stunning creative art through advanced particle systems and interactive galleries.
 
-## Features
+## ✨ Features
 
-### Core Functionality
-- **Real-time Audio Capture**: Uses PyAudio to capture audio from your microphone
-- **Advanced Audio Analysis**: Extracts amplitude, RMS, peak amplitude, dB levels, and dominant frequency
-- **Dynamic Visualizations**: Visual effects respond to audio data in real-time
-- **Customizable Parameters**: Adjust shape size, color saturation, palette, alpha, element count, and animation speed
+### 🎵 Creative Studio Mode
+- **Real-time Audio Response**: Particles react instantly to microphone input
+- **5 Dynamic Visual Themes**:
+  - 🌌 **Cosmic**: Starfield particles with galaxy-like effects
+  - 🔥 **Fire**: Flame-like particles with heat simulation
+  - 🌊 **Ocean**: Wave particles with fluid dynamics
+  - 🌲 **Forest**: Nature-inspired organic movements
+  - 💜 **Neon**: Cyberpunk-style glowing effects
+- **Advanced Particle System**: 2000+ particles with 4 types (spark, wave, flow, burst)
+- **Beat Detection**: Particles respond to rhythm and bass
+- **3D-like Effects**: Depth simulation with Z-axis movement
 
-### Visual Effects
-- **Multiple Shape Types**: Circles, squares, triangles, and stars
-- **Color Palettes**: Fire, ocean, forest, sunset, neon, purple, and rainbow themes
-- **Particle Systems**: Dynamic particle effects for high-energy audio
-- **Wave Mode**: Sinusoidal wave patterns based on frequency
-- **Symmetry Mode**: Mirror effects for enhanced visual appeal
-
-### Two Operation Modes
-
-#### Single Mode
-- Individual user interface for real-time visualization
-- Record audio and visual sessions
-- Customize visualization parameters in real-time
-- Save recordings with metadata
-
-#### Gallery Mode
-- View all visualizations from all users
-- Playback recorded sessions with original visual effects
+### 🖼️ Art Gallery Mode
+- **Interactive Navigation**: WASD movement through virtual space
+- **5 Art Pattern Types**:
+  - Spiral designs
+  - Mandala patterns
+  - Wave forms
+  - Geometric art
+  - Fractal-like effects
+- **Dynamic Generation**: Patterns evolve based on audio input
+- **Smooth Camera**: Fluid movement through the gallery space
 - Browse recordings by user, date, and duration
 - Delete unwanted recordings
 

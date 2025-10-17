@@ -519,3 +519,40 @@ class DataStorage:
             'most_active_user': most_active_user,
             'avg_duration': total_duration / len(records) if records else 0.0
         }
+    
+    def save_recording(self, record_data: Dict[str, Any]) -> bool:
+        """
+        Save a recording with metadata
+        
+        Args:
+            record_data: Dictionary containing recording information
+            
+        Returns:
+            bool: True if saved successfully, False otherwise
+        """
+        try:
+            # Create AudioRecord from data
+            record = AudioRecord(
+                id=str(uuid.uuid4()),
+                timestamp=datetime.datetime.now().isoformat(),
+                duration=10.0,  # Default duration for live recordings
+                sample_rate=44100,
+                audio_metrics=record_data.get('audio_metrics', {}),
+                visualization_settings=record_data.get('visualization_settings', {}),
+                user_name=record_data.get('user_name', 'Anonymous'),
+                title=record_data.get('title', 'Untitled'),
+                tags=record_data.get('tags', [])
+            )
+            
+            # Save to database with empty audio data for live recordings
+            empty_audio_data = []  # Live recordings don't have stored audio chunks
+            success = self.db_manager.save_record(record, empty_audio_data)
+            
+            if success:
+                print(f"Recording saved: {record.title} by {record.user_name}")
+            
+            return success
+            
+        except Exception as e:
+            print(f"Error saving recording: {e}")
+            return False
