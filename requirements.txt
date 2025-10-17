@@ -1,8 +1,8 @@
-# Audio Perception - Dynamic Audio Visualization System
+# Vision AI Creative Studio - Camera-based Visualization System
 # Required Python packages
 
-# Core audio processing
-pyaudio==0.2.11
+# Computer vision and camera processing
+opencv-python>=4.8.0
 
 # Numerical computing and array operations
 numpy>=1.21.0
@@ -13,11 +13,19 @@ pygame>=2.1.0
 # GUI framework for pygame
 pygame-gui>=0.6.0
 
+# Image processing and manipulation
+Pillow>=9.0.0
+
 # Data handling and utilities
 sqlite3  # Built-in with Python
 
-# Optional: For better audio codec support
-# soundfile>=0.10.0
+# Legacy audio support (keeping for transition)
+# pyaudio==0.2.11
+
+# Optional: Advanced AI features
+# mediapipe>=0.10.0      # For hand/pose detection
+# ultralytics>=8.0.0     # For object detection (YOLO)
+# transformers>=4.20.0   # For text processing
 
 # Optional: For advanced signal processing
 # scipy>=1.7.0
