@@ -1,31 +1,58 @@
-# Vision AI Creative Studio - Camera-based Visualization System
-# Required Python packages
+# Multi-Modal Creative Visualization System Dependencies# Vision AI Creative Studio - Camera-based Visualization System
 
-# Computer vision and camera processing
-opencv-python>=4.8.0
+# Required Python packages for camera, audio, and AI integration# Required Python packages
 
-# Numerical computing and array operations
-numpy>=1.21.0
 
-# Graphics and game development library
-pygame>=2.1.0
 
-# GUI framework for pygame
-pygame-gui>=0.6.0
+# Computer vision and camera processing# Computer vision and camera processing
 
-# Image processing and manipulation
-Pillow>=9.0.0
+opencv-python>=4.8.0opencv-python>=4.8.0
 
-# Data handling and utilities
-sqlite3  # Built-in with Python
 
-# Legacy audio support (keeping for transition)
-# pyaudio==0.2.11
 
-# Optional: Advanced AI features
-# mediapipe>=0.10.0      # For hand/pose detection
-# ultralytics>=8.0.0     # For object detection (YOLO)
-# transformers>=4.20.0   # For text processing
+# Numerical computing and array operations# Numerical computing and array operations
+
+numpy>=1.21.0numpy>=1.21.0
+
+
+
+# Graphics and game development library# Graphics and game development library
+
+pygame>=2.1.0pygame>=2.1.0
+
+
+
+# User interface components# GUI framework for pygame
+
+pygame-gui>=0.6.0pygame-gui>=0.6.0
+
+
+
+# Audio processing and real-time capture# Image processing and manipulation
+
+pyaudio>=0.2.11Pillow>=9.0.0
+
+
+
+# AI integration and HTTP requests for LM Studio# Data handling and utilities
+
+requests>=2.28.0sqlite3  # Built-in with Python
+
+
+
+# Data handling (for older Python versions)# Legacy audio support (keeping for transition)
+
+dataclasses; python_version<"3.7"# pyaudio==0.2.11
+
+
+
+# Optional: Enhanced Features# Optional: Advanced AI features
+
+# mediapipe>=0.10.0  # For advanced gesture recognition# mediapipe>=0.10.0      # For hand/pose detection
+
+# tensorflow>=2.10.0  # For custom AI models# ultralytics>=8.0.0     # For object detection (YOLO)
+
+# torch>=1.13.0       # Alternative ML framework# transformers>=4.20.0   # For text processing
 
 # Optional: For advanced signal processing
 # scipy>=1.7.0

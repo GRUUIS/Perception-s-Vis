@@ -1,31 +1,94 @@
-# 🎨 Creative Audio Visualization System
+# Multi-Modal Creative Visualization System
+# Camera + Audio + AI Powered Visual Effects
 
-A dynamic real-time audio visualization application that transforms microphone input into stunning creative art through advanced particle systems and interactive galleries.
+## Project Architecture
 
-## ✨ Features
+This project provides real-time visual effects generation from multiple input sources:
+- **Camera Input**: Motion detection, color analysis, object recognition
+- **Audio Input**: Beat detection, frequency analysis, amplitude tracking  
+- **AI Integration**: Natural language style control, intelligent effect generation
 
-### 🎵 Creative Studio Mode
-- **Real-time Audio Response**: Particles react instantly to microphone input
-- **5 Dynamic Visual Themes**:
-  - 🌌 **Cosmic**: Starfield particles with galaxy-like effects
-  - 🔥 **Fire**: Flame-like particles with heat simulation
-  - 🌊 **Ocean**: Wave particles with fluid dynamics
-  - 🌲 **Forest**: Nature-inspired organic movements
-  - 💜 **Neon**: Cyberpunk-style glowing effects
-- **Advanced Particle System**: 2000+ particles with 4 types (spark, wave, flow, burst)
-- **Beat Detection**: Particles respond to rhythm and bass
-- **3D-like Effects**: Depth simulation with Z-axis movement
+## Features
 
-### 🖼️ Art Gallery Mode
-- **Interactive Navigation**: WASD movement through virtual space
-- **5 Art Pattern Types**:
-  - Spiral designs
-  - Mandala patterns
-  - Wave forms
-  - Geometric art
-  - Fractal-like effects
-- **Dynamic Generation**: Patterns evolve based on audio input
-- **Smooth Camera**: Fluid movement through the gallery space
+### � Camera Vision
+- Real-time motion tracking
+- Color palette extraction
+- Object and gesture detection
+- Depth-aware particle spawning
+
+### 🎵 Audio Analysis  
+- Multi-band frequency analysis
+- Beat and rhythm detection
+- Real-time amplitude monitoring
+- Musical pattern recognition
+
+### 🤖 AI Integration
+- Natural language style commands
+- Local LLM integration (LM Studio compatible)
+- Intelligent effect parameter generation
+- Context-aware visual responses
+
+### ✨ Visual Effects
+- Advanced particle systems
+- Multiple rendering modes
+- Real-time style transfer
+- 3D-aware effects
+
+## Requirements
+
+```bash
+# Core dependencies
+opencv-python>=4.8.0
+pygame>=2.1.0
+numpy>=1.21.0
+pyaudio>=0.2.11
+
+# AI integration
+requests>=2.28.0
+openai>=1.0.0
+
+# Optional enhancements
+mediapipe>=0.10.0
+ultralytics>=8.0.0
+```
+
+## Quick Start
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+python main.py
+```
+
+## Controls
+
+- **Camera Mode**: Move in front of camera for motion-based effects
+- **Audio Mode**: Play music or make sounds for audio-reactive visuals
+- **Text Commands**: Type natural language to control visual styles
+- **Hybrid Mode**: Combine all inputs for complex interactive art
+
+## Project Structure
+
+```
+core/                   # Core functionality
+├── vision/            # Camera processing
+├── audio/             # Audio analysis
+├── ai/                # AI integration
+└── effects/           # Visual effects engine
+
+interface/             # User interfaces
+├── main_studio.py     # Primary application
+├── camera_mode.py     # Camera-focused interface
+└── audio_mode.py      # Audio-focused interface
+
+legacy/               # Previous implementations
+```
+
+## License
+
+Creative Commons - Share and modify freely
 - Browse recordings by user, date, and duration
 - Delete unwanted recordings
 
