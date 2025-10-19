@@ -23,13 +23,13 @@ from core.effects import VisualEffectsEngine
 class MultiModalStudio:
     """Main application interface for multi-modal creative visualization"""
     
-    def __init__(self, width: int = 1200, height: int = 800):
+    def __init__(self, width: int = 1400, height: int = 900):
         """
         Initialize Multi-Modal Creative Studio
         
         Args:
-            width: Window width
-            height: Window height
+            width: Window width (increased for side panels)
+            height: Window height (increased for better layout)
         """
         self.width = width
         self.height = height
@@ -37,17 +37,28 @@ class MultiModalStudio:
         # Initialize Pygame
         pygame.init()
         self.screen = pygame.display.set_mode((width, height))
-        pygame.display.set_caption("Multi-Modal Creative Studio")
+        pygame.display.set_caption("Multi-Modal Creative Studio v2.0")
         self.clock = pygame.time.Clock()
         
         # GUI Manager
         self.gui_manager = pygame_gui.UIManager((width, height))
         
+        # Layout configuration
+        self.main_area_width = width - 320  # Reserve 320px for side panels
+        self.main_area_height = height - 150  # Reserve 150px for controls
+        self.side_panel_width = 300
+        
         # Core components
         self.camera_analyzer = None
         self.audio_analyzer = None
         self.ai_processor = AIStyleProcessor()
-        self.visual_engine = VisualEffectsEngine((width, height - 150))  # Leave space for controls
+        self.visual_engine = VisualEffectsEngine((self.main_area_width, self.main_area_height))
+        
+        # Display surfaces for real-time data
+        self.camera_surface = None
+        self.audio_surface = None
+        self.camera_display_rect = pygame.Rect(width - 310, 10, 300, 225)  # Top right
+        self.audio_display_rect = pygame.Rect(width - 310, 245, 300, 200)  # Below camera
         
         # Application state
         self.running = True
@@ -79,20 +90,33 @@ class MultiModalStudio:
         
         # Mode buttons
         self.camera_button = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect(10, panel_y, 100, 30),
+            relative_rect=pygame.Rect(10, panel_y, 120, 30),
             text='Camera: OFF',
             manager=self.gui_manager
         )
         
         self.audio_button = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect(120, panel_y, 100, 30),
+            relative_rect=pygame.Rect(140, panel_y, 120, 30),
             text='Audio: OFF',
             manager=self.gui_manager
         )
         
         self.ai_button = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect(230, panel_y, 100, 30),
-            text='AI: Disconnected',
+            relative_rect=pygame.Rect(270, panel_y, 120, 30),
+            text='AI: Offline',
+            manager=self.gui_manager
+        )
+        
+        # Real-time display labels
+        self.camera_label = pygame_gui.elements.UILabel(
+            relative_rect=pygame.Rect(self.width - 310, 460, 300, 25),
+            text='📸 Real-time Camera Feed',
+            manager=self.gui_manager
+        )
+        
+        self.audio_label = pygame_gui.elements.UILabel(
+            relative_rect=pygame.Rect(self.width - 310, 690, 300, 25),
+            text='🎵 Real-time Audio Analysis',
             manager=self.gui_manager
         )
         
@@ -134,16 +158,19 @@ class MultiModalStudio:
         """Initialize core components"""
         print("🚀 Initializing Multi-Modal Creative Studio...")
         
-        # Try to connect to AI
+        # Try to connect to AI silently
         try:
             self.ai_connected = self.ai_processor.connect()
             if self.ai_connected:
                 self.ai_button.set_text('AI: Connected')
                 print("✅ AI processor connected")
             else:
-                print("⚠️ AI processor not available (LM Studio not running?)")
-        except Exception as e:
-            print(f"❌ AI initialization failed: {e}")
+                self.ai_button.set_text('AI: Offline')
+                # Only print message if user specifically tries to use AI features
+        except Exception:
+            # Silent failure for optional AI features
+            self.ai_connected = False
+            self.ai_button.set_text('AI: Offline')
         
         print("✅ Studio initialized successfully")
     
@@ -279,9 +306,14 @@ class MultiModalStudio:
                     elif event.ui_element == self.audio_button:
                         self.toggle_audio()
                     elif event.ui_element == self.ai_button:
-                        # Try to reconnect AI
+                        # Try to reconnect AI silently
                         self.ai_connected = self.ai_processor.connect()
-                        self.ai_button.set_text('AI: Connected' if self.ai_connected else 'AI: Failed')
+                        if self.ai_connected:
+                            self.ai_button.set_text('AI: Connected')
+                            print("✅ AI processor connected")
+                        else:
+                            self.ai_button.set_text('AI: Offline')
+                            print("💡 Tip: Start LM Studio to enable AI features")
                     elif event.ui_element == self.process_button:
                         self.process_ai_input()
                     elif event.ui_element == self.reset_button:
@@ -304,6 +336,172 @@ class MultiModalStudio:
             
             # Pass event to GUI manager
             self.gui_manager.process_events(event)
+    
+    def _render_real_time_displays(self):
+        """Render real-time camera and audio displays"""
+        import cv2
+        import numpy as np
+        
+        # Camera display
+        if self.camera_analyzer and self.camera_active:
+            frame = self.camera_analyzer.get_current_frame()
+            if frame is not None:
+                # Resize frame to fit display area
+                display_frame = cv2.resize(frame, (self.camera_display_rect.width, 
+                                                  self.camera_display_rect.height - 25))
+                
+                # Convert BGR to RGB for pygame
+                display_frame = cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB)
+                
+                # Create pygame surface
+                camera_surface = pygame.surfarray.make_surface(display_frame.swapaxes(0, 1))
+                
+                # Draw camera feed
+                self.screen.blit(camera_surface, (self.camera_display_rect.x, 
+                                                self.camera_display_rect.y + 25))
+                
+                # Draw border
+                pygame.draw.rect(self.screen, (100, 100, 100), 
+                               (self.camera_display_rect.x, self.camera_display_rect.y + 25,
+                                self.camera_display_rect.width, self.camera_display_rect.height - 25), 2)
+        else:
+            # Draw placeholder
+            pygame.draw.rect(self.screen, (30, 30, 40), 
+                           (self.camera_display_rect.x, self.camera_display_rect.y + 25,
+                            self.camera_display_rect.width, self.camera_display_rect.height - 25))
+            
+            font = pygame.font.Font(None, 24)
+            text = font.render("Camera Offline", True, (100, 100, 100))
+            text_rect = text.get_rect(center=(self.camera_display_rect.centerx, 
+                                             self.camera_display_rect.centery))
+            self.screen.blit(text, text_rect)
+        
+        # Audio display
+        if self.audio_analyzer and self.audio_active:
+            self._render_audio_visualization()
+        else:
+            # Draw placeholder
+            pygame.draw.rect(self.screen, (30, 30, 40), 
+                           (self.audio_display_rect.x, self.audio_display_rect.y + 25,
+                            self.audio_display_rect.width, self.audio_display_rect.height - 25))
+            
+            font = pygame.font.Font(None, 24)
+            text = font.render("Audio Offline", True, (100, 100, 100))
+            text_rect = text.get_rect(center=(self.audio_display_rect.centerx, 
+                                             self.audio_display_rect.centery + 12))
+            self.screen.blit(text, text_rect)
+    
+    def _render_audio_visualization(self):
+        """Render beautiful audio visualization"""
+        import numpy as np
+        
+        # Get audio data and metrics
+        if not self.audio_analyzer:
+            return
+            
+        metrics = self.audio_analyzer.get_current_metrics()
+        audio_data = self.audio_analyzer.get_audio_data()
+        
+        # Audio display area
+        display_x = self.audio_display_rect.x
+        display_y = self.audio_display_rect.y + 25
+        display_w = self.audio_display_rect.width
+        display_h = self.audio_display_rect.height - 25
+        
+        # Clear area with dark background
+        pygame.draw.rect(self.screen, (15, 15, 25), (display_x, display_y, display_w, display_h))
+        
+        # Draw waveform if we have recent audio data
+        if len(audio_data) > 0:
+            recent_data = audio_data[-512:]  # Last 512 samples
+            if len(recent_data) > 10:
+                # Normalize data
+                data_array = np.array(recent_data)
+                if len(data_array) > 0:
+                    data_normalized = data_array / (np.max(np.abs(data_array)) + 1e-10)
+                    
+                    # Draw waveform
+                    center_y = display_y + display_h // 2
+                    step = display_w / len(data_normalized)
+                    
+                    points = []
+                    for i, sample in enumerate(data_normalized):
+                        x = display_x + i * step
+                        y = center_y - sample * (display_h // 3)
+                        points.append((x, y))
+                    
+                    if len(points) > 1:
+                        # Draw gradient waveform
+                        volume = metrics.get('amplitude', 0.0)
+                        color_intensity = min(255, int(volume * 5000))
+                        color = (
+                            min(255, color_intensity + 50),
+                            min(255, color_intensity // 2 + 100),
+                            255 - color_intensity // 3
+                        )
+                        
+                        # Draw waveform line
+                        if len(points) > 1:
+                            pygame.draw.lines(self.screen, color, False, points, 2)
+        
+        # Draw frequency spectrum bars
+        if len(audio_data) >= 256:
+            # Get recent chunk for FFT
+            fft_data = np.array(audio_data[-256:])
+            fft = np.fft.fft(fft_data)
+            freqs = np.abs(fft[:128])  # Take first half
+            
+            if np.max(freqs) > 0:
+                freqs_norm = freqs / np.max(freqs)
+                
+                bar_width = display_w / len(freqs_norm)
+                for i, freq_level in enumerate(freqs_norm):
+                    bar_height = freq_level * (display_h // 3)
+                    bar_x = display_x + i * bar_width
+                    bar_y = display_y + display_h - bar_height
+                    
+                    # Color gradient based on frequency
+                    hue = (i / len(freqs_norm)) * 360
+                    color = self._hsv_to_rgb(hue, 0.8, freq_level * 0.8 + 0.2)
+                    
+                    pygame.draw.rect(self.screen, color, 
+                                   (bar_x, bar_y, bar_width - 1, bar_height))
+        
+        # Draw audio level meter
+        level = metrics.get('amplitude', 0.0) * 5000  # Scale for visibility
+        level_width = int(min(display_w - 20, level * display_w))
+        
+        # Level bar background
+        pygame.draw.rect(self.screen, (40, 40, 50), 
+                       (display_x + 10, display_y + 10, display_w - 20, 8))
+        
+        # Level bar foreground
+        if level_width > 0:
+            level_color = (
+                min(255, int(level * 500)),
+                max(50, 255 - int(level * 300)),
+                100
+            )
+            pygame.draw.rect(self.screen, level_color, 
+                           (display_x + 10, display_y + 10, level_width, 8))
+        
+        # Beat indicator
+        if metrics.get('beat_detected', False):
+            pygame.draw.circle(self.screen, (255, 255, 100), 
+                             (display_x + display_w - 30, display_y + 30), 8)
+        else:
+            pygame.draw.circle(self.screen, (80, 80, 80), 
+                             (display_x + display_w - 30, display_y + 30), 8, 2)
+        
+        # Draw border
+        pygame.draw.rect(self.screen, (100, 100, 100), 
+                       (display_x, display_y, display_w, display_h), 2)
+    
+    def _hsv_to_rgb(self, h, s, v):
+        """Convert HSV to RGB color"""
+        import colorsys
+        r, g, b = colorsys.hsv_to_rgb(h/360.0, s, v)
+        return (int(r * 255), int(g * 255), int(b * 255))
     
     def _update_performance_stats(self):
         """Update performance statistics"""
@@ -344,6 +542,11 @@ class MultiModalStudio:
                 
                 # Render
                 self.visual_engine.render(self.screen)
+                
+                # Render real-time camera and audio displays
+                self._render_real_time_displays()
+                
+                # Render GUI on top
                 self.gui_manager.draw_ui(self.screen)
                 
                 # Update display

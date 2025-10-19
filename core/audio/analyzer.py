@@ -19,7 +19,8 @@ class AudioAnalyzer:
                  format: int = pyaudio.paInt16,
                  channels: int = 1,
                  rate: int = 44100,
-                 callback: Optional[Callable] = None):
+                 callback: Optional[Callable] = None,
+                 input_device_index: Optional[int] = None):
         """
         Initialize the Audio Analyzer
         
@@ -29,12 +30,14 @@ class AudioAnalyzer:
             channels: Number of audio channels
             rate: Sample rate
             callback: Callback function to receive audio data
+            input_device_index: Specific audio input device to use (None for default)
         """
         self.chunk_size = chunk_size
         self.format = format
         self.channels = channels
         self.rate = rate
         self.callback = callback
+        self.input_device_index = input_device_index
         
         # PyAudio instance
         self.p = pyaudio.PyAudio()
@@ -76,7 +79,7 @@ class AudioAnalyzer:
                 rate=self.rate,
                 input=True,
                 frames_per_buffer=self.chunk_size,
-                input_device_index=None  # Use default device
+                input_device_index=self.input_device_index  # Use specified device or default
             )
             
             # Start recording thread
@@ -154,6 +157,12 @@ class AudioAnalyzer:
         # Convert to float for better precision
         audio_float = audio_data.astype(np.float32)
         
+        # Normalize to [-1, 1] range for consistent processing
+        if self.format == pyaudio.paInt16:
+            audio_float = audio_float / 32767.0
+        elif self.format == pyaudio.paInt32:
+            audio_float = audio_float / 2147483647.0
+        
         # Basic metrics
         amplitude = np.mean(np.abs(audio_float))
         rms = np.sqrt(np.mean(audio_float ** 2))
@@ -162,9 +171,9 @@ class AudioAnalyzer:
         # Calculate energy
         energy = np.sum(audio_float ** 2)
         
-        # Decibel level
+        # Decibel level (reference to full scale)
         epsilon = 1e-10
-        db = 20 * np.log10(max(rms, epsilon) / 32767.0)
+        db = 20 * np.log10(max(rms, epsilon))
         db = max(db, -60.0)
         
         # Dominant frequency
@@ -264,8 +273,155 @@ class AudioAnalyzer:
         return self.is_recording
         
     def get_volume_level(self) -> float:
-        """Get current volume level (0.0 to 1.0)"""
-        return self.get_normalized_metrics()['db_norm']
+        """Get current volume level (0.0 to 1.0) - improved sensitivity"""
+        metrics = self.get_current_metrics()
+        # Use amplitude instead of db_norm for better responsiveness
+        amplitude = metrics.get('amplitude', 0.0)
+        # Scale amplitude to be more sensitive to quiet sounds
+        volume = min(1.0, amplitude * 5000.0)  # Amplify by 5000x for extreme sensitivity
+        return volume
+    
+    @staticmethod
+    def find_best_input_device() -> Optional[int]:
+        """Find the best microphone input device"""
+        p = pyaudio.PyAudio()
+        
+        best_device = None
+        best_score = -1
+        
+        try:
+            for i in range(p.get_device_count()):
+                try:
+                    info = p.get_device_info_by_index(i)
+                    if info['maxInputChannels'] > 0:
+                        name = info['name'].lower()
+                        score = 0
+                        
+                        # Prefer certain types of devices
+                        if 'microphone' in name:
+                            score += 10
+                        if 'array' in name:
+                            score += 5
+                        if 'headset' in name:
+                            score += 3
+                        if 'soundwire' in name or 'realtek' in name:
+                            score += 2
+                        
+                        # Avoid virtual/streaming devices for real audio
+                        if any(avoid in name for avoid in ['steam', 'virtual', 'oculus']):
+                            score -= 5
+                        
+                        if score > best_score:
+                            best_score = score
+                            best_device = i
+                            
+                except Exception:
+                    continue
+                    
+        except Exception:
+            pass
+        finally:
+            p.terminate()
+            
+        return best_device
+    
+    def start_visual_mode(self, effects_engine=None):
+        """Start audio-only visual mode with spectrum display"""
+        import pygame
+        import math
+        
+        # Initialize pygame
+        pygame.init()
+        screen = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption("Audio Analysis Mode")
+        clock = pygame.time.Clock()
+        font = pygame.font.Font(None, 24)
+        
+        # Start audio recording
+        self.start_recording()
+        print("🎵 Audio analysis active - Press 'Q' or ESC to quit")
+        
+        running = True
+        spectrum_history = []
+        
+        try:
+            while running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key in (pygame.K_q, pygame.K_ESCAPE):
+                            running = False
+                
+                # Clear screen with dark background
+                screen.fill((10, 10, 30))
+                
+                # Get current audio metrics
+                metrics = self.get_current_metrics()
+                
+                # Draw audio level bar
+                level = self.get_volume_level()
+                bar_width = int(level * 600)
+                color = (
+                    int(255 * level),
+                    int(255 * (1 - level)),
+                    100
+                )
+                pygame.draw.rect(screen, color, (100, 100, bar_width, 30))
+                pygame.draw.rect(screen, (100, 100, 100), (100, 100, 600, 30), 2)
+                
+                # Draw beat indicator
+                if metrics.get('beat_detected', False):
+                    pygame.draw.circle(screen, (255, 255, 0), (50, 115), 20)
+                else:
+                    pygame.draw.circle(screen, (50, 50, 50), (50, 115), 20, 2)
+                
+                # Draw frequency spectrum visualization
+                if len(self.audio_data) > 0:
+                    recent_data = self.audio_data[-self.chunk_size:]
+                    if len(recent_data) == self.chunk_size:
+                        # Calculate FFT for frequency spectrum
+                        fft = np.fft.fft(recent_data)
+                        freqs = np.abs(fft[:len(fft)//2])
+                        
+                        # Normalize and draw spectrum
+                        if len(freqs) > 0:
+                            max_freq = np.max(freqs) if np.max(freqs) > 0 else 1
+                            freqs_normalized = freqs / max_freq
+                            
+                            bar_width = 600 // len(freqs_normalized[:100])
+                            for i, freq in enumerate(freqs_normalized[:100]):
+                                height = int(freq * 200)
+                                color_intensity = int(freq * 255)
+                                color = (color_intensity, 100, 255 - color_intensity)
+                                pygame.draw.rect(screen, color, 
+                                               (100 + i * bar_width, 400 - height, 
+                                                bar_width - 1, height))
+                
+                # Display metrics text
+                y_offset = 200
+                for key, value in metrics.items():
+                    if isinstance(value, float):
+                        text = f"{key}: {value:.3f}"
+                    else:
+                        text = f"{key}: {value}"
+                    text_surface = font.render(text, True, (255, 255, 255))
+                    screen.blit(text_surface, (100, y_offset))
+                    y_offset += 25
+                
+                # Instructions
+                inst_text = font.render("Press 'Q' or ESC to quit", True, (150, 150, 150))
+                screen.blit(inst_text, (100, 550))
+                
+                pygame.display.flip()
+                clock.tick(30)
+                
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.stop_recording()
+            pygame.quit()
+            print("🎵 Audio mode stopped")
         
     def __del__(self):
         """Cleanup when object is destroyed"""

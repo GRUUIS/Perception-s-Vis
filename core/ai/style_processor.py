@@ -44,13 +44,13 @@ class LMStudioClient:
     def test_connection(self) -> bool:
         """Test connection to LM Studio server"""
         try:
-            response = requests.get(f"{self.base_url}/v1/models", timeout=5)
+            response = requests.get(f"{self.base_url}/v1/models", timeout=2)
             self.is_connected = response.status_code == 200
             if self.is_connected:
                 print("🤖 Connected to LM Studio successfully")
             return self.is_connected
-        except Exception as e:
-            print(f"❌ LM Studio connection failed: {e}")
+        except Exception:
+            # Silently fail - don't print error messages for optional AI features
             self.is_connected = False
             return False
     
@@ -104,30 +104,41 @@ class LMStudioClient:
             return self._fallback_style(user_input)
     
     def _get_system_prompt(self) -> str:
-        """Get system prompt for style generation"""
-        return """You are an AI visual effects designer. Your job is to convert natural language descriptions into specific visual effect parameters for a real-time visualization system.
+        """Get enhanced system prompt for beautiful visual style generation"""
+        return """You are an AI visual effects artist specialized in creating stunning real-time visualizations. Convert natural language descriptions into detailed visual effect parameters for an advanced particle system.
 
-When given a description, respond with a JSON object containing:
+Respond with a JSON object containing:
 {
-    "colors": [[r,g,b], [r,g,b], ...],  // RGB color palette (3-5 colors)
-    "motion": "flow_type",               // "spiral", "wave", "explosion", "gentle", "chaotic"
-    "intensity": 0.8,                   // 0.0 to 1.0
-    "duration": 5.0,                    // seconds
+    "colors": [[r,g,b], [r,g,b], ...],  // RGB color palette (3-6 colors, be creative!)
+    "motion": "pattern_type",            // "spiral", "wave", "explosion", "orbital", "magnetic", "chaotic", "gentle"
+    "intensity": 0.8,                   // 0.0 to 1.0 - energy level
+    "duration": 5.0,                    // seconds - effect duration
     "particles": {
-        "count": 100,                   // number of particles
-        "size": 3,                      // particle size
-        "speed": 2.0,                   // movement speed
-        "life": 3.0                     // particle lifetime
+        "count": 150,                   // number of particles (50-500)
+        "size": 4,                      // base particle size (1-10)
+        "speed": 3.0,                   // movement speed (0.5-10.0)
+        "life": 4.0,                    // particle lifetime (1.0-8.0)
+        "glow": true,                   // enable glow effects
+        "trails": true,                 // enable particle trails
+        "shapes": ["circle", "star"],   // particle shapes: "circle", "star", "diamond", "heart"
+        "pulsate": false               // pulsating animation
+    },
+    "environment": {
+        "gravity": 0.0,                 // -5.0 to 5.0
+        "wind": [0.0, 0.0]             // [x, y] wind force
     }
 }
 
-Examples:
-- "calm ocean" → blue colors, wave motion, low intensity
-- "fire explosion" → red/orange colors, explosion motion, high intensity  
-- "forest breeze" → green colors, gentle motion, medium intensity
-- "neon cyberpunk" → bright electric colors, chaotic motion, high intensity
+Enhanced Examples:
+- "starry night sky" → deep blues/purples, gentle motion, star shapes, glow, trails
+- "volcanic eruption" → reds/oranges/yellows, explosion motion, high intensity, large particles
+- "underwater bubbles" → cyan/blue/white, gentle upward motion, circles, low gravity
+- "electric storm" → purple/white/cyan, chaotic motion, high intensity, glow, fast particles
+- "cherry blossoms" → pink/white, gentle spiral, heart/circle shapes, soft trails
+- "disco party" → rainbow colors, orbital motion, all shapes, pulsate, high energy
+- "peaceful meditation" → soft pastels, wave motion, gentle, small particles, trails
 
-Always respond with valid JSON only, no other text."""
+Be creative with colors and combine effects for maximum visual impact. Always respond with valid JSON only."""
 
     def _build_style_prompt(self, user_input: str, context: Dict = None) -> str:
         """Build prompt for style generation"""
@@ -246,19 +257,21 @@ Always respond with valid JSON only, no other text."""
 
 
 class AIStyleProcessor:
-    """Main AI style processing interface"""
+    """Main AI style processing interface with enhanced model support"""
     
-    def __init__(self, lm_studio_url: str = "http://localhost:1234"):
+    def __init__(self, lm_studio_url: str = "http://localhost:1234", model_name: str = "gpt-oss-20b"):
         """
         Initialize AI Style Processor
         
         Args:
             lm_studio_url: LM Studio server URL
+            model_name: Model to use (e.g., 'gpt-oss-20b', 'llama-7b', etc.)
         """
-        self.client = LMStudioClient(base_url=lm_studio_url)
+        self.client = LMStudioClient(base_url=lm_studio_url, model_name=model_name)
         self.current_style = None
         self.processing_queue = []
         self.is_processing = False
+        self.model_name = model_name
         
     def connect(self) -> bool:
         """Connect to LM Studio"""

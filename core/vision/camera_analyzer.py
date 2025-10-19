@@ -232,3 +232,66 @@ class CameraAnalyzer:
         if self.dominant_colors:
             return self.dominant_colors[0]['color']
         return (255, 255, 255)
+    
+    def start_visual_mode(self, effects_engine=None):
+        """Start camera-only visual mode with basic display"""
+        import pygame
+        
+        # Initialize pygame
+        pygame.init()
+        screen = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption("Camera Vision Mode")
+        clock = pygame.time.Clock()
+        
+        # Start camera
+        if not self.start():
+            print("❌ Failed to start camera")
+            return
+        
+        print("📸 Camera active - Press 'Q' or ESC to quit")
+        running = True
+        
+        try:
+            while running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key in (pygame.K_q, pygame.K_ESCAPE):
+                            running = False
+                
+                # Clear screen
+                screen.fill((0, 0, 0))
+                
+                # Get camera frame
+                frame = self.get_current_frame()
+                if frame is not None:
+                    # Convert OpenCV frame to pygame surface
+                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    frame_resized = cv2.resize(frame_rgb, (640, 480))
+                    frame_surface = pygame.surfarray.make_surface(frame_resized.swapaxes(0, 1))
+                    screen.blit(frame_surface, (80, 60))
+                    
+                    # Display analysis data
+                    font = pygame.font.Font(None, 24)
+                    data = self.get_analysis_data()
+                    
+                    y_offset = 20
+                    for key, value in data.items():
+                        if isinstance(value, float):
+                            text = f"{key}: {value:.3f}"
+                        else:
+                            text = f"{key}: {value}"
+                        text_surface = font.render(text, True, (255, 255, 255))
+                        screen.blit(text_surface, (10, y_offset))
+                        y_offset += 25
+                
+                pygame.display.flip()
+                clock.tick(30)
+                
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.stop()
+            pygame.quit()
+            print("📸 Camera mode stopped")
