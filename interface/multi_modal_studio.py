@@ -51,7 +51,10 @@ class MultiModalStudio:
         # Core components
         self.camera_analyzer = None
         self.audio_analyzer = None
-        self.ai_processor = AIStyleProcessor()
+        # Allow environment overrides for AI URL/model
+        lm_url = os.environ.get('LM_STUDIO_URL', 'http://localhost:1234')
+        model_name = os.environ.get('AI_MODEL_NAME', 'gpt-oss-20b')
+        self.ai_processor = AIStyleProcessor(lm_studio_url=lm_url, model_name=model_name)
         self.visual_engine = VisualEffectsEngine((self.main_area_width, self.main_area_height))
         
         # Display surfaces for real-time data
@@ -101,11 +104,7 @@ class MultiModalStudio:
             manager=self.gui_manager
         )
         
-        self.ai_button = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect(270, panel_y, 120, 30),
-            text='AI: Offline',
-            manager=self.gui_manager
-        )
+        # Removed manual AI connect button; auto-connect on startup
         
         # Real-time display labels
         self.camera_label = pygame_gui.elements.UILabel(
@@ -158,19 +157,15 @@ class MultiModalStudio:
         """Initialize core components"""
         print("🚀 Initializing Multi-Modal Creative Studio...")
         
-        # Try to connect to AI silently
+        # Auto-connect to AI silently on startup
         try:
             self.ai_connected = self.ai_processor.connect()
             if self.ai_connected:
-                self.ai_button.set_text('AI: Connected')
                 print("✅ AI processor connected")
             else:
-                self.ai_button.set_text('AI: Offline')
-                # Only print message if user specifically tries to use AI features
+                print("🤖 AI not available (LM Studio offline?) — using smart fallbacks")
         except Exception:
-            # Silent failure for optional AI features
             self.ai_connected = False
-            self.ai_button.set_text('AI: Offline')
         
         print("✅ Studio initialized successfully")
     
@@ -305,15 +300,7 @@ class MultiModalStudio:
                         self.toggle_camera()
                     elif event.ui_element == self.audio_button:
                         self.toggle_audio()
-                    elif event.ui_element == self.ai_button:
-                        # Try to reconnect AI silently
-                        self.ai_connected = self.ai_processor.connect()
-                        if self.ai_connected:
-                            self.ai_button.set_text('AI: Connected')
-                            print("✅ AI processor connected")
-                        else:
-                            self.ai_button.set_text('AI: Offline')
-                            print("💡 Tip: Start LM Studio to enable AI features")
+                    # Removed manual AI connect button
                     elif event.ui_element == self.process_button:
                         self.process_ai_input()
                     elif event.ui_element == self.reset_button:
