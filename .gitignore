@@ -1,7 +1,6 @@
 ﻿##### Python virtual envs
 venv/
 .venv/
-env/
 
 ##### Python bytecode / cache
 __pycache__/
@@ -44,4 +43,3 @@ data/recordings/*
 data/visualizations/*
 !data/recordings/.gitkeep
 !data/visualizations/.gitkeep
-data/*.db

@@ -12,8 +12,8 @@ pydub>=0.25.1
 dataclasses ; python_version < "3.7"
 
 # -------- Optional: AI / ML --------
-mediapipe>=0.10.0
-tensorflow>=2.10.0 
-torch>=1.13.0
-ultralytics>=8.0.0
-openai>=1.0.0
+# mediapipe>=0.10.0
+# tensorflow>=2.10.0 
+# torch>=1.13.0
+# ultralytics>=8.0.0
+# openai>=1.0.0
