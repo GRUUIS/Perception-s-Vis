@@ -1,23 +1,34 @@
-# Multi-Modal Creative Visualization System
-# Requirements for camera, audio, and AI integration
+# Multi-Modal Creative Visualization System# Multi-Modal Creative Visualization System
 
-# Core dependencies
-numpy>=1.21.0
-opencv-python>=4.8.0
-pygame>=2.1.0
-pygame-gui>=0.6.0
-pyaudio>=0.2.11
-requests>=2.28.0
+# Requirements for camera, audio, and AI integration# Requirements for camera, audio, and AI integration
 
-# Optional: Enhanced AI/ML Features (uncomment if needed)
-# mediapipe>=0.10.0      # Advanced gesture recognition
-# tensorflow>=2.10.0     # Custom AI models
-# torch>=1.13.0          # Alternative ML framework
-# openai>=1.0.0          # OpenAI API integration
 
-pygame-gui>=0.6.0
+
+# Core dependencies# Core dependencies
 
 numpy>=1.21.0numpy>=1.21.0
+
+opencv-python>=4.8.0opencv-python>=4.8.0
+
+pygame>=2.1.0pygame>=2.1.0
+
+pygame-gui>=0.6.0pygame-gui>=0.6.0
+
+pyaudio>=0.2.11pyaudio>=0.2.11
+
+requests>=2.28.0requests>=2.28.0
+
+
+
+# Optional: Enhanced AI/ML Features (uncomment if needed)# Optional: Enhanced AI/ML Features (uncomment if needed)
+
+# mediapipe>=0.10.0      # Advanced gesture recognition# mediapipe>=0.10.0      # Advanced gesture recognition
+
+# tensorflow>=2.10.0     # Custom AI models# tensorflow>=2.10.0     # Custom AI models
+
+# torch>=1.13.0          # Alternative ML framework# torch>=1.13.0          # Alternative ML framework
+
+# openai>=1.0.0          # OpenAI API integration# openai>=1.0.0          # OpenAI API integration
 
 # Audio processing and real-time capture
 

@@ -413,25 +413,26 @@ class MultiModalStudio:
         
         # Draw waveform if we have recent audio data
         if len(audio_data) > 0:
-            recent_data = audio_data[-512:]  # Last 512 samples
-            if len(recent_data) > 10:
-                # Normalize data
-                data_array = np.array(recent_data)
-                if len(data_array) > 0:
-                    data_normalized = data_array / (np.max(np.abs(data_array)) + 1e-10)
-                    
-                    # Draw waveform
+            # audio_data is a list of numpy arrays; flatten safely
+            try:
+                buffers = audio_data[-4:]  # last few buffers
+                flat = np.concatenate([np.asarray(b).astype(np.float32) for b in buffers])
+                # Normalize
+                max_abs = np.max(np.abs(flat)) if flat.size else 0.0
+                if max_abs > 0:
+                    data_normalized = flat / max_abs
+                else:
+                    data_normalized = flat
+                # Use up to N points for drawing
+                N = min(512, data_normalized.size)
+                if N > 10:
+                    segment = data_normalized[-N:]
                     center_y = display_y + display_h // 2
-                    step = display_w / len(data_normalized)
-                    
-                    points = []
-                    for i, sample in enumerate(data_normalized):
-                        x = display_x + i * step
-                        y = center_y - sample * (display_h // 3)
-                        points.append((x, y))
-                    
+                    step = display_w / N
+                    # Build points as number pairs (x, y)
+                    points = [(display_x + i * step, center_y - float(sample) * (display_h // 3))
+                              for i, sample in enumerate(segment)]
                     if len(points) > 1:
-                        # Draw gradient waveform
                         volume = metrics.get('amplitude', 0.0)
                         color_intensity = min(255, int(volume * 5000))
                         color = (
@@ -439,33 +440,37 @@ class MultiModalStudio:
                             min(255, color_intensity // 2 + 100),
                             255 - color_intensity // 3
                         )
-                        
-                        # Draw waveform line
-                        if len(points) > 1:
-                            pygame.draw.lines(self.screen, color, False, points, 2)
+                        pygame.draw.lines(self.screen, color, False, points, 2)
+            except Exception:
+                # If anything goes wrong, just skip this frame's waveform
+                pass
         
         # Draw frequency spectrum bars
-        if len(audio_data) >= 256:
-            # Get recent chunk for FFT
-            fft_data = np.array(audio_data[-256:])
-            fft = np.fft.fft(fft_data)
-            freqs = np.abs(fft[:128])  # Take first half
-            
-            if np.max(freqs) > 0:
-                freqs_norm = freqs / np.max(freqs)
-                
-                bar_width = display_w / len(freqs_norm)
-                for i, freq_level in enumerate(freqs_norm):
-                    bar_height = freq_level * (display_h // 3)
-                    bar_x = display_x + i * bar_width
-                    bar_y = display_y + display_h - bar_height
-                    
-                    # Color gradient based on frequency
-                    hue = (i / len(freqs_norm)) * 360
-                    color = self._hsv_to_rgb(hue, 0.8, freq_level * 0.8 + 0.2)
-                    
-                    pygame.draw.rect(self.screen, color, 
-                                   (bar_x, bar_y, bar_width - 1, bar_height))
+        # Frequency spectrum bars (use concatenated recent samples)
+        if len(audio_data) > 0:
+            try:
+                buffers = audio_data[-4:]
+                flat = np.concatenate([np.asarray(b).astype(np.float32) for b in buffers])
+                if flat.size >= 256:
+                    segment = flat[-512:] if flat.size >= 512 else flat
+                    # Windowed FFT
+                    window = np.hanning(segment.size)
+                    fft = np.fft.rfft(segment * window)
+                    freqs = np.abs(fft)
+                    if freqs.size > 1 and np.max(freqs) > 0:
+                        freqs_norm = freqs / np.max(freqs)
+                        draw_bins = min(64, freqs_norm.size)
+                        bar_width = display_w / draw_bins
+                        for i, freq_level in enumerate(freqs_norm[:draw_bins]):
+                            bar_height = float(freq_level) * (display_h // 3)
+                            bar_x = display_x + i * bar_width
+                            bar_y = display_y + display_h - bar_height
+                            hue = (i / draw_bins) * 360
+                            color = self._hsv_to_rgb(hue, 0.8, float(freq_level) * 0.8 + 0.2)
+                            pygame.draw.rect(self.screen, color,
+                                             (bar_x, bar_y, max(1, bar_width - 1), bar_height))
+            except Exception:
+                pass
         
         # Draw audio level meter
         level = metrics.get('amplitude', 0.0) * 5000  # Scale for visibility

@@ -17,7 +17,7 @@ class AudioAnalyzer:
     def __init__(self, 
                  chunk_size: int = 1024,
                  format: int = pyaudio.paInt16,
-                 channels: int = 1,
+                 channels: int = 2,
                  rate: int = 44100,
                  callback: Optional[Callable] = None,
                  input_device_index: Optional[int] = None):
@@ -27,14 +27,14 @@ class AudioAnalyzer:
         Args:
             chunk_size: Number of frames per buffer
             format: Audio format
-            channels: Number of audio channels
+            channels: Number of audio channels (will auto-adjust based on device capability)
             rate: Sample rate
             callback: Callback function to receive audio data
             input_device_index: Specific audio input device to use (None for default)
         """
         self.chunk_size = chunk_size
         self.format = format
-        self.channels = channels
+        self.requested_channels = channels  # Store requested channels
         self.rate = rate
         self.callback = callback
         self.input_device_index = input_device_index
@@ -43,30 +43,112 @@ class AudioAnalyzer:
         self.p = pyaudio.PyAudio()
         self.stream = None
         
+        # Auto-detect and configure optimal channels
+        self._configure_channels()
+        
         # Audio data storage
         self.is_recording = False
         self.audio_data = []
         self.current_metrics = {
             'amplitude': 0.0,
+            'frequency': 0.0,
+            'beat_strength': 0.0,
+            'energy': 0.0,
+            'is_beat': False
+        }
+        
+        # Beat detection
+        self.energy_history = []
+        self.beat_threshold = 1.3
+        
+        # Recording thread
+        self.recording_thread = None
+        
+        # Visual mode flag
+        self.visual_mode = False
+        
+        # Enhanced sensitivity
+        self.sensitivity_multiplier = 5000
+        
+        # Color effects
+        self.hue_offset = 0.0
+        
+        # Particle trails
+        self.trails = []
+        self.max_trail_points = 15
+        
+    def _configure_channels(self):
+        """Auto-configure channels based on device capability"""
+        try:
+            if self.input_device_index is None:
+                # Find best device and configure channels
+                best_device_index = self.find_best_input_device()
+                if best_device_index is not None and best_device_index != -1:
+                    self.input_device_index = best_device_index
+                    device_info = self.p.get_device_info_by_index(self.input_device_index)
+                    max_channels = int(device_info.get('maxInputChannels', 1))
+                    self.channels = min(self.requested_channels, max_channels)
+                    print(f"🎵 Auto-configured: Device '{device_info['name']}' with {self.channels} channel(s)")
+                else:
+                    # Fallback to mono
+                    self.channels = 1
+                    print("⚠️ No suitable stereo device found, using mono (1 channel)")
+            else:
+                # Use specified device and check its capabilities
+                try:
+                    device_info = self.p.get_device_info_by_index(self.input_device_index)
+                    max_channels = int(device_info.get('maxInputChannels', 1))
+                    self.channels = min(self.requested_channels, max_channels)
+                    print(f"🎵 Using device '{device_info['name']}' with {self.channels} channel(s)")
+                except Exception as e:
+                    print(f"⚠️ Error checking device {self.input_device_index}: {e}")
+                    self.channels = 1
+                    self.input_device_index = None
+        except Exception as e:
+            print(f"⚠️ Channel configuration error: {e}")
+            self.channels = 1  # Safe fallback to mono
+            self.input_device_index = None
+            
+        # Audio data storage
+        self.is_recording = False
+        self.audio_data = []
+        self.current_metrics = {
+            'amplitude': 0.0,
+            'frequency': 0.0,
+            'beat_strength': 0.0,
+            'energy': 0.0,
+            'is_beat': False,
             'rms': 0.0,
             'peak': 0.0,
             'db': -60.0,
-            'frequency': 0.0,
-            'beat_detected': False,
-            'energy': 0.0
+            'beat_detected': False
         }
         
-        # Enhanced analysis features
-        self.beat_threshold = 1.5
+        # Beat detection
         self.energy_history = []
+        self.beat_threshold = 1.3
         self.max_history = 50
         
-        # Threading
+        # Recording thread
         self.recording_thread = None
         
+        # Visual mode flag
+        self.visual_mode = False
+        
+        # Enhanced sensitivity
+        self.sensitivity_multiplier = 5000
+        
+        # Color effects
+        self.hue_offset = 0.0
+        
+        # Particle trails
+        self.trails = []
+        self.max_trail_points = 15
+    
     def start_recording(self):
-        """Start audio recording and analysis"""
+        """Start audio recording with error handling"""
         if self.is_recording:
+            print("⚠️ Audio analyzer is already running")
             return
             
         try:
@@ -162,6 +244,16 @@ class AudioAnalyzer:
             audio_float = audio_float / 32767.0
         elif self.format == pyaudio.paInt32:
             audio_float = audio_float / 2147483647.0
+        
+        # Handle stereo (2-channel) audio by converting to mono for analysis
+        if self.channels == 2 and len(audio_float) > 0:
+            # Reshape to separate channels and take average (mono mix)
+            try:
+                audio_float = audio_float.reshape(-1, 2)
+                audio_float = np.mean(audio_float, axis=1)  # Mix to mono
+            except ValueError:
+                # If reshape fails, just use the data as-is
+                pass
         
         # Basic metrics
         amplitude = np.mean(np.abs(audio_float))
@@ -283,7 +375,7 @@ class AudioAnalyzer:
     
     @staticmethod
     def find_best_input_device() -> Optional[int]:
-        """Find the best microphone input device"""
+        """Find the best microphone input device that supports required channels"""
         p = pyaudio.PyAudio()
         
         best_device = None
@@ -296,6 +388,10 @@ class AudioAnalyzer:
                     if info['maxInputChannels'] > 0:
                         name = info['name'].lower()
                         score = 0
+                        
+                        # Test if device supports 2 channels, prefer devices that do
+                        if info['maxInputChannels'] >= 2:
+                            score += 20  # Boost score for stereo devices
                         
                         # Prefer certain types of devices
                         if 'microphone' in name:
@@ -329,6 +425,7 @@ class AudioAnalyzer:
         """Start audio-only visual mode with spectrum display"""
         import pygame
         import math
+        import numpy as np
         
         # Initialize pygame
         pygame.init()
@@ -378,25 +475,37 @@ class AudioAnalyzer:
                 
                 # Draw frequency spectrum visualization
                 if len(self.audio_data) > 0:
-                    recent_data = self.audio_data[-self.chunk_size:]
-                    if len(recent_data) == self.chunk_size:
-                        # Calculate FFT for frequency spectrum
-                        fft = np.fft.fft(recent_data)
-                        freqs = np.abs(fft[:len(fft)//2])
-                        
-                        # Normalize and draw spectrum
-                        if len(freqs) > 0:
-                            max_freq = np.max(freqs) if np.max(freqs) > 0 else 1
-                            freqs_normalized = freqs / max_freq
-                            
-                            bar_width = 600 // len(freqs_normalized[:100])
-                            for i, freq in enumerate(freqs_normalized[:100]):
-                                height = int(freq * 200)
-                                color_intensity = int(freq * 255)
-                                color = (color_intensity, 100, 255 - color_intensity)
-                                pygame.draw.rect(screen, color, 
-                                               (100 + i * bar_width, 400 - height, 
-                                                bar_width - 1, height))
+                    # Flatten the most recent buffers and take last N samples
+                    try:
+                        buffers = self.audio_data[-4:]  # up to last ~4 buffers
+                        flat = np.concatenate([np.asarray(b).astype(np.float32) for b in buffers])
+                        if self.format == pyaudio.paInt16:
+                            flat = flat / 32767.0
+                        elif self.format == pyaudio.paInt32:
+                            flat = flat / 2147483647.0
+                        if self.channels == 2 and flat.size % 2 == 0:
+                            flat = flat.reshape(-1, 2).mean(axis=1)
+                        if flat.size >= 256:
+                            segment = flat[-512:] if flat.size >= 512 else flat
+                            # Calculate FFT for frequency spectrum
+                            window = np.hanning(segment.size)
+                            fft = np.fft.rfft(segment * window)
+                            freqs = np.abs(fft)
+                            # Normalize and draw spectrum
+                            if freqs.size > 0:
+                                max_freq = np.max(freqs) if np.max(freqs) > 0 else 1
+                                freqs_normalized = freqs / max_freq
+                                draw_bins = min(100, freqs_normalized.size)
+                                bar_width = max(1, 600 // draw_bins)
+                                for i, freq in enumerate(freqs_normalized[:draw_bins]):
+                                    height = int(freq * 200)
+                                    color_intensity = int(freq * 255)
+                                    color = (color_intensity, 100, 255 - color_intensity)
+                                    pygame.draw.rect(screen, color,
+                                                     (100 + i * bar_width, 400 - height,
+                                                      bar_width - 1, height))
+                    except Exception:
+                        pass
                 
                 # Display metrics text
                 y_offset = 200

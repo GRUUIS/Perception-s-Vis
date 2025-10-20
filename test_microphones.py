@@ -11,6 +11,12 @@ sys.path.insert(0, os.path.dirname(__file__))
 import pyaudio
 import numpy as np
 import time
+try:
+    # Mark this file as a utility script; skip under pytest collection
+    import pytest
+    pytestmark = pytest.mark.skip("Utility script for manual microphone testing; not a unit test")
+except Exception:
+    pass
 
 def test_microphone_device(device_index, duration=3):
     """Test a specific microphone device"""
@@ -22,7 +28,7 @@ def test_microphone_device(device_index, duration=3):
         
         stream = p.open(
             format=pyaudio.paInt16,
-            channels=1,
+            channels=2,
             rate=44100,
             input=True,
             frames_per_buffer=1024,
