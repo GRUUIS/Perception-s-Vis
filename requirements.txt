@@ -1,74 +1,19 @@
-# Multi-Modal Creative Visualization System# Multi-Modal Creative Visualization System
-
-# Requirements for camera, audio, and AI integration# Requirements for camera, audio, and AI integration
-
-
-
-# Core dependencies# Core dependencies
-
-numpy>=1.21.0numpy>=1.21.0
-
-opencv-python>=4.8.0opencv-python>=4.8.0
-
-pygame>=2.1.0pygame>=2.1.0
-
-pygame-gui>=0.6.0pygame-gui>=0.6.0
-
-pyaudio>=0.2.11pyaudio>=0.2.11
-
-requests>=2.28.0requests>=2.28.0
-
-
-
-# Optional: Enhanced AI/ML Features (uncomment if needed)# Optional: Enhanced AI/ML Features (uncomment if needed)
-
-# mediapipe>=0.10.0      # Advanced gesture recognition# mediapipe>=0.10.0      # Advanced gesture recognition
-
-# tensorflow>=2.10.0     # Custom AI models# tensorflow>=2.10.0     # Custom AI models
-
-# torch>=1.13.0          # Alternative ML framework# torch>=1.13.0          # Alternative ML framework
-
-# openai>=1.0.0          # OpenAI API integration# openai>=1.0.0          # OpenAI API integration
-
-# Audio processing and real-time capture
-
+# -------- Core (camera / audio / UI / HTTP) --------
+numpy>=1.21.0
+opencv-python>=4.8.0
+pygame-ce==2.5.6
+pygame-gui==0.6.14
 pyaudio>=0.2.11
-
-
-
-# AI integration and HTTP requests for LM Studio# Graphics and game development library# Graphics and game development library
-
 requests>=2.28.0
+Pillow>=9.0.0
+pydub>=0.25.1
 
-pygame>=2.1.0pygame>=2.1.0
+# dataclasses 
+dataclasses ; python_version < "3.7"
 
-# Data handling utilities
-
-dataclasses; python_version<"3.7"
-
-
-
-# Optional: Enhanced Features (uncomment if needed)# User interface components# GUI framework for pygame
-
-# mediapipe>=0.10.0      # Advanced gesture recognition
-
-# tensorflow>=2.10.0     # Custom AI modelspygame-gui>=0.6.0pygame-gui>=0.6.0
-
-# torch>=1.13.0          # Alternative ML framework
-
-# ultralytics>=8.0.0     # YOLO object detection
-
-# Audio processing and real-time capture# Image processing and manipulation
-
-pyaudio>=0.2.11Pillow>=9.0.0
-
-
-
-# AI integration and HTTP requests for LM Studio# Data handling and utilities
-
-requests>=2.28.0sqlite3  # Built-in with Python
-
-
-
-# Data handling (for older Python versions)# Legacy audio support (keeping for transition)
-dataclasses; python_version<"3.7"pydub>=0.25.1
+# -------- Optional: AI / ML --------
+mediapipe>=0.10.0
+tensorflow>=2.10.0 
+torch>=1.13.0
+ultralytics>=8.0.0
+openai>=1.0.0
