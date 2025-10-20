@@ -77,6 +77,40 @@ class AudioAnalyzer:
         self.trails = []
         self.max_trail_points = 15
         
+        
+    def list_input_devices(self):
+        try:
+            print("\n Detected Audio Input Devices:")
+            default_input_index = None
+            try:
+                default_input_index = self.p.get_default_input_device_info().get('index')
+            except Exception:
+                pass
+
+            for i in range(self.p.get_device_count()):
+                info = self.p.get_device_info_by_index(i)
+                if info.get('maxInputChannels', 0) > 0:
+                    tag = " (Default)" if default_input_index == i else ""
+                    print(
+                        f" - index={i}{tag} | name={info.get('name')} | "
+                        f"channels={info.get('maxInputChannels')} | "
+                        f"defaultRate={info.get('defaultSampleRate')}"
+                    )
+            print()
+        except Exception as e:
+            print(f"Device enumeration failed: {e}")
+
+
+    @staticmethod
+    def _int_or_float_rate(x):
+        try:
+            r = float(x)
+            return int(r)
+        except Exception:
+            return 44100
+
+        
+        
     def _configure_channels(self):
         """Auto-configure channels based on device capability"""
         try:
@@ -375,51 +409,43 @@ class AudioAnalyzer:
     
     @staticmethod
     def find_best_input_device() -> Optional[int]:
-        """Find the best microphone input device that supports required channels"""
         p = pyaudio.PyAudio()
-        
-        best_device = None
-        best_score = -1
-        
+        best = None
         try:
+            try:
+                default_info = p.get_default_input_device_info()
+                if default_info and default_info.get('maxInputChannels', 0) > 0:
+                    return int(default_info['index'])
+            except Exception:
+                pass
+
+            score_best = -1
             for i in range(p.get_device_count()):
                 try:
                     info = p.get_device_info_by_index(i)
-                    if info['maxInputChannels'] > 0:
-                        name = info['name'].lower()
-                        score = 0
-                        
-                        # Test if device supports 2 channels, prefer devices that do
-                        if info['maxInputChannels'] >= 2:
-                            score += 20  # Boost score for stereo devices
-                        
-                        # Prefer certain types of devices
-                        if 'microphone' in name:
-                            score += 10
-                        if 'array' in name:
-                            score += 5
-                        if 'headset' in name:
-                            score += 3
-                        if 'soundwire' in name or 'realtek' in name:
-                            score += 2
-                        
-                        # Avoid virtual/streaming devices for real audio
-                        if any(avoid in name for avoid in ['steam', 'virtual', 'oculus']):
-                            score -= 5
-                        
-                        if score > best_score:
-                            best_score = score
-                            best_device = i
-                            
+                    if info.get('maxInputChannels', 0) <= 0:
+                        continue
+                    name = (info.get('name') or "").lower()
+                    score = 0
+                    if info.get('maxInputChannels', 0) >= 1:
+                        score += 10
+                    if info.get('maxInputChannels', 0) >= 2:
+                        score += 10
+                    if 'microphone' in name:
+                        score += 10
+                    if 'array' in name:
+                        score += 5
+                    if any(bad in name for bad in ['virtual', 'stream', 'stereo mix', 'loopback', 'oculus', 'steam']):
+                        score -= 8
+                    if score > score_best:
+                        score_best = score
+                        best = i
                 except Exception:
                     continue
-                    
-        except Exception:
-            pass
         finally:
             p.terminate()
-            
-        return best_device
+        return best
+
     
     def start_visual_mode(self, effects_engine=None):
         """Start audio-only visual mode with spectrum display"""
