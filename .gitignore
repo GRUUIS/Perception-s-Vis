@@ -1,5 +1,47 @@
-﻿venv/
+﻿##### Python virtual envs
+venv/
 .venv/
-__pycache__/
-*.pyc
+env/
 
+##### Python bytecode / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+##### Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+##### Test / coverage
+.pytest_cache/
+.tox/
+.coverage
+coverage.xml
+htmlcov/
+
+##### OS files
+.DS_Store
+Thumbs.db
+
+##### Editors / IDEs
+.vscode/
+.idea/
+*.code-workspace
+
+##### Environment / secrets
+.env
+.env.*
+!*.env.example
+
+##### Logs / runtime
+*.log
+*.pid
+
+##### Local data/output (keep folders, ignore files)
+data/recordings/*
+data/visualizations/*
+!data/recordings/.gitkeep
+!data/visualizations/.gitkeep
+data/*.db
