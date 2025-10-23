@@ -1,71 +1,89 @@
-# Camera + Audio + Some Visual Effects
+# Audio-Perception Multi-Modal Creative Visualization System
+# Real-time Camera + Audio + AI + Selfie Segmentation Visual Effects
 
-## See a detailed explaination
+## See a detailed explanation
 https://deepwiki.com/GRUUIS/Perception-s-Vis/1-overview
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/GRUUIS/Perception-s-Vis)
 
 ## Project Architecture
 
 This project provides real-time visual effects generation from multiple input sources:
-- **Camera Input**: Motion detection, color analysis, object recognition
-- **Audio Input**: Beat detection, frequency analysis, amplitude tracking  
-- **AI Integration**: Style control, effect generation
+- **Camera Input**: Motion detection, color analysis, selfie segmentation with visual effects backgrounds
+- **Audio Input**: Real-time beat detection, frequency analysis, amplitude tracking with advanced device selection
+- **AI Integration**: Control via local LM Studio integration
 
 ## Features
 
-### Camera Vision
-- Real-time motion tracking
-- Color palette extraction
+### Camera Vision System
+- **Real-time Motion Tracking**: Computer vision-based movement detection
+- **Selfie Segmentation**: Real-time person segmentation with visual effects backgrounds
 
-### Audio Analysis  
-- Real-time amplitude monitoring
+### Audio Analysis Engine
+- **Smart Device Selection**: Automatically detects and prioritizes the best microphone input
+- **Real-time Processing**: Low-latency audio capture with configurable chunk sizes
+- **Beat Detection**: Intelligent rhythm recognition for dynamic visual responses
 
-### AI Integration
-- Natural language style commands
-- Local LLM integration (LM Studio compatible)
+### AI Integration Hub
+- **Local LLM Support**: Compatible with LM Studio and similar local AI servers
+
+### Visual Effects
+- **Multi-modal Responsiveness**: Combined audio and visual input processing
+- **Color Transformations**: Color changes based on inputs
 
 ## Requirements
+pip install -r requirements
 
-```bash
-# Core dependencies
-opencv-python>=4.8.0
-pygame>=2.1.0
-numpy>=1.21.0
-pyaudio>=0.2.11
-
-# AI integration
-requests>=2.28.0
-openai>=1.0.0
-
-# Optional enhancements
-mediapipe>=0.10.0
-ultralytics>=8.0.0
-```
-
-## Quick Start
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the application
+## Run the main application
 python main.py
 ```
-
-## Controls
-
-- **Camera Mode**: Move in front of camera for motion-based effects
-- **Audio Mode**: Play music or make sounds for audio-reactive visuals
-- **Text Commands**: Type natural language to control visual styles
-
-
-## Installation
-
-### Install Dependencies
-```bash
-pip install -r requirements.txt
+Audio-Perception/           # Multi-Modal Creative Visualization System
+├── main.py                # Main application entry point
+├── requirements.txt       # Python dependencies
+├── requirements-ml.txt    # ML dependencies for segmentation
+├── .env.example          # Environment configuration template
+├── .gitignore            # Git ignore patterns
+│
+├── core/                 # Core functionality modules
+│   ├── __init__.py
+│   ├── audio/           # Audio analysis and processing
+│   │   ├── __init__.py
+│   │   └── analyzer.py   # Real-time audio analysis, beat detection
+│   ├── vision/          # Camera and visual processing
+│   │   ├── __init__.py
+│   │   ├── camera_analyzer.py      # Computer vision, motion detection
+│   │   └── selfie_segmentation.py  # MediaPipe segmentation wrapper
+│   ├── ai/              # AI integration and processing
+│   │   ├── __init__.py
+│   │   └── style_processor.py  # LM Studio integration, style control
+│   └── effects/         # Visual effects engine
+│       ├── __init__.py
+│       └── visual_engine.py   # Dynamic visual effects generation
+│
+├── interface/           # User interface modules
+│   ├── __init__.py
+│   └── multi_modal_studio.py  # Main GUI application with segmentation
+│
+├── data/               # Data storage and outputs
+│   ├── audio_perception.db   # Application database
+│   ├── recordings/     # Audio recordings storage
+│   └── visualizations/ # Generated visual outputs
+│
+├── tools/              # Development and diagnostic tools
+│   ├── audio_diag.py           # Audio device diagnostics
+│   ├── selfie_demo.py          # Segmentation demo
+│   └── camera_seg_test.py      # Integration testing
+│
+└── legacy/             # Previous implementations and backups
+    └── src/            # Legacy source code
 ```
-### Starting the Application
+
+## Update: Add Selfie Segmentation Feature
+- **Real-time Processing**: 30 FPS segmentation with visual effects background
+- **Safe Fallback**: If MediaPipe is unavailable, the system gracefully falls back to normal camera mode
+
+
+### Environment Configuration
+Create a `.env` file for AI integration:
 ```bash
-python main.py
-```
+LM_STUDIO_URL=http://localhost:1234
+AI_MODEL_NAME=gpt-oss-20b

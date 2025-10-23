@@ -11,5 +11,5 @@ pydub>=0.25.1
 # dataclasses 
 dataclasses ; python_version < "3.7"
 
-# -------- Add: AI for segmentation --------
+# -------- Add: AI for selfie segmentation --------
 mediapipe>=0.10.0
