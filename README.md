@@ -1,5 +1,8 @@
 # Camera + Audio + Some Visual Effects
 
+## See a detailed explaination
+https://deepwiki.com/GRUUIS/Perception-s-Vis/1-overview
+
 ## Project Architecture
 
 This project provides real-time visual effects generation from multiple input sources:
