@@ -1,5 +1,5 @@
 # Audio-Perception Multi-Modal Creative Visualization System
-# Real-time Camera + Audio + AI + Selfie Segmentation Visual Effects
+## Camera + Audio + Selfie Segmentation Personalized Visual Effects
 
 ## See a detailed explanation
 https://deepwiki.com/GRUUIS/Perception-s-Vis/1-overview
