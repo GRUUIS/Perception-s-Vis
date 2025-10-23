@@ -2,7 +2,6 @@
 ## Camera + Audio + Selfie Segmentation Personalized Visual Effects
 
 ## See a detailed explanation
-https://deepwiki.com/GRUUIS/Perception-s-Vis/1-overview
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/GRUUIS/Perception-s-Vis)
 
 ## Project Architecture
