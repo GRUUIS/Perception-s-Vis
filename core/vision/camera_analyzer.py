@@ -267,6 +267,12 @@ class CameraAnalyzer:
         print("📸 Camera active - Press 'Q' or ESC to quit")
         running = True
         
+        # Initialize visual effects background surface if segmentation enabled
+        effects_surface = None
+        if self.enable_segmentation and effects_engine:
+            effects_surface = pygame.Surface((640, 480))
+            effects_surface.fill((0, 20, 40))  # Dark blue base
+        
         try:
             while running:
                 for event in pygame.event.get():
@@ -279,15 +285,43 @@ class CameraAnalyzer:
                 # Clear screen
                 screen.fill((0, 0, 0))
                 
+                # Update visual effects for segmentation background
+                if self.enable_segmentation and effects_engine and effects_surface:
+                    try:
+                        # Get current analysis data to drive effects
+                        analysis_data = self.get_analysis_data()
+                        
+                        # Update effects engine with motion data using correct signature
+                        if effects_engine:
+                            # Convert motion centers from (x, y, area) to (x, y) format
+                            motion_centers = [(center[0], center[1]) for center in analysis_data.get('motion_centers', [])]
+                            
+                            effects_engine.update(
+                                dt=1.0/30.0,  # 30 FPS delta time
+                                motion_centers=motion_centers,
+                                audio_data={
+                                    'amplitude': analysis_data.get('visual_energy', 0.0) * 1000,
+                                    'beat_detected': analysis_data.get('motion_intensity', 0.0) > 0.05
+                                }
+                            )
+                            
+                            # Render effects to background surface
+                            effects_surface.fill((0, 20, 40))  # Clear with dark base
+                            effects_engine.render(effects_surface)
+                    except Exception as e:
+                        print(f"Effects update error: {e}")
+                
                 # Get camera frame
                 frame = self.get_current_frame()
                 if frame is not None:
-                    # Optionally apply segmentation before display
+                    # Optionally apply segmentation with visual effects background
                     display_frame = frame
-                    if self.enable_segmentation and self.segmenter is not None:
+                    if self.enable_segmentation and self.segmenter is not None and effects_surface:
                         try:
-                            bg = self.segmentation_background or (0, 128, 255)
-                            display_frame = self.segmenter.apply(frame, bg)
+                            # Convert pygame surface to OpenCV format for segmentation
+                            bg_array = pygame.surfarray.array3d(effects_surface)
+                            bg_bgr = cv2.cvtColor(bg_array.swapaxes(0, 1), cv2.COLOR_RGB2BGR)
+                            display_frame = self.segmenter.apply(frame, bg_bgr)
                         except Exception as e:
                             print(f"Segmentation error: {e}")
                             display_frame = frame

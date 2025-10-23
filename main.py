@@ -47,14 +47,17 @@ def check_dependencies():
     print("✅ All dependencies found!")
     return True
 
-def run_camera_mode():
+def run_camera_mode(enable_segmentation=False):
     """Launch camera-only mode"""
     try:
         print("📸 Starting Camera Vision Mode...")
+        if enable_segmentation:
+            print("🪄 Selfie segmentation enabled - visual effects as background")
+        
         from core.vision import CameraAnalyzer
         from core.effects import VisualEffectsEngine
         
-        camera = CameraAnalyzer()
+        camera = CameraAnalyzer(enable_segmentation=enable_segmentation)
         effects = VisualEffectsEngine()
         
         print("🎯 Camera mode active - Press 'Q' to quit")
@@ -113,16 +116,19 @@ def show_help():
     print("   python main.py                    # Full multi-modal studio")
     print("   python main.py --mode=camera      # Camera-only mode")
     print("   python main.py --mode=audio       # Audio-only mode")
+    print("   python main.py --enable-segmentation # Camera mode with selfie segmentation")
     print("   python main.py --help             # Show this help")
     print("\n🎯 Features:")
     print("   📸 Camera Mode: Motion tracking, color analysis, gesture detection")
-    print("   � Audio Mode: Beat detection, frequency analysis, rhythm tracking")
+    print("   🎵 Audio Mode: Beat detection, frequency analysis, rhythm tracking")
     print("   🤖 AI Mode: Natural language style control (requires LM Studio)")
+    print("   🪄 Segmentation: Replace background with real-time visual effects (requires mediapipe)")
     print("   ✨ Visual Effects: Particle systems, real-time rendering")
     print("\n🔧 Setup:")
     print("   1. Install: pip install -r requirements.txt")
     print("   2. For AI features: Start LM Studio with local model")
-    print("   3. Connect camera and/or microphone")
+    print("   3. For segmentation: pip install -r requirements-ml.txt")
+    print("   4. Connect camera and/or microphone")
 
 def main():
     """Main entry point"""
@@ -141,6 +147,11 @@ def main():
         action='store_true',
         help='Check dependencies only'
     )
+    parser.add_argument(
+        '--enable-segmentation',
+        action='store_true',
+        help='Enable selfie segmentation with visual effects background (requires mediapipe)'
+    )
     
     args = parser.parse_args()
     
@@ -158,7 +169,7 @@ def main():
     
     try:
         if args.mode == 'camera':
-            run_camera_mode()
+            run_camera_mode(enable_segmentation=args.enable_segmentation)
         elif args.mode == 'audio':
             run_audio_mode()
         else:  # full mode

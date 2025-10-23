@@ -68,6 +68,7 @@ class MultiModalStudio:
         self.camera_active = False
         self.audio_active = False
         self.ai_connected = False
+        self.segmentation_active = False
         
         # Input handling
         self.text_input = ""
@@ -101,6 +102,13 @@ class MultiModalStudio:
         self.audio_button = pygame_gui.elements.UIButton(
             relative_rect=pygame.Rect(140, panel_y, 120, 30),
             text='Audio: OFF',
+            manager=self.gui_manager
+        )
+        
+        # Segmentation toggle button
+        self.segmentation_button = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(270, panel_y, 140, 30),
+            text='Segmentation: OFF',
             manager=self.gui_manager
         )
         
@@ -220,6 +228,60 @@ class MultiModalStudio:
             self.audio_button.set_text('Audio: OFF')
             self.status_label.set_text('Status: Audio deactivated')
     
+    def toggle_segmentation(self):
+        """Toggle selfie segmentation with visual effects background"""
+        if not self.camera_active:
+            self.status_label.set_text('Status: Camera must be active for segmentation')
+            return
+        
+        if not self.segmentation_active:
+            # Enable segmentation
+            try:
+                # Import here to handle optional dependency gracefully
+                from core.vision.selfie_segmentation import SelfieSegmenter
+                
+                # Recreate camera analyzer with segmentation enabled
+                if self.camera_analyzer:
+                    self.camera_analyzer.stop()
+                
+                self.camera_analyzer = CameraAnalyzer(
+                    camera_id=0,
+                    resolution=(640, 480),
+                    callback=self._handle_vision_data,
+                    enable_segmentation=True
+                )
+                
+                if self.camera_analyzer.start():
+                    self.segmentation_active = True
+                    self.segmentation_button.set_text('Segmentation: ON')
+                    self.status_label.set_text('Status: Segmentation activated - you are now overlaid on visual effects!')
+                else:
+                    self.status_label.set_text('Status: Failed to restart camera with segmentation')
+                    
+            except ImportError:
+                self.status_label.set_text('Status: Segmentation unavailable - install mediapipe')
+            except Exception as e:
+                self.status_label.set_text(f'Status: Segmentation failed - {e}')
+        else:
+            # Disable segmentation
+            if self.camera_analyzer:
+                self.camera_analyzer.stop()
+            
+            # Recreate camera analyzer without segmentation
+            self.camera_analyzer = CameraAnalyzer(
+                camera_id=0,
+                resolution=(640, 480),
+                callback=self._handle_vision_data,
+                enable_segmentation=False
+            )
+            
+            if self.camera_analyzer.start():
+                self.segmentation_active = False
+                self.segmentation_button.set_text('Segmentation: OFF')
+                self.status_label.set_text('Status: Segmentation deactivated - back to normal camera')
+            else:
+                self.status_label.set_text('Status: Failed to restart camera without segmentation')
+    
     def process_ai_input(self):
         """Process AI text input"""
         text = self.text_entry.get_text()
@@ -300,6 +362,8 @@ class MultiModalStudio:
                         self.toggle_camera()
                     elif event.ui_element == self.audio_button:
                         self.toggle_audio()
+                    elif event.ui_element == self.segmentation_button:
+                        self.toggle_segmentation()
                     # Removed manual AI connect button
                     elif event.ui_element == self.process_button:
                         self.process_ai_input()
@@ -323,6 +387,47 @@ class MultiModalStudio:
             
             # Pass event to GUI manager
             self.gui_manager.process_events(event)
+    
+    def _render_segmentation_overlay(self):
+        """Render segmentation overlay on main screen if enabled"""
+        if not self.segmentation_active or not self.camera_active or not self.camera_analyzer:
+            return
+        
+        try:
+            import cv2
+            import pygame
+            
+            # Get current camera frame
+            frame = self.camera_analyzer.get_current_frame()
+            if frame is None:
+                return
+            
+            # Check if segmentation is enabled in camera analyzer
+            if hasattr(self.camera_analyzer, 'segmenter') and self.camera_analyzer.segmenter is not None:
+                # Create a surface with current visual effects for background
+                effects_surface = pygame.Surface((self.main_area_width, self.main_area_height))
+                self.visual_engine.render(effects_surface)
+                
+                # Convert pygame surface to OpenCV format for segmentation
+                effects_array = pygame.surfarray.array3d(effects_surface)
+                effects_bgr = cv2.cvtColor(effects_array.swapaxes(0, 1), cv2.COLOR_RGB2BGR)
+                
+                # Resize camera frame to match main area
+                frame_resized = cv2.resize(frame, (self.main_area_width, self.main_area_height))
+                
+                # Apply segmentation with visual effects as background
+                segmented_frame = self.camera_analyzer.segmenter.apply(frame_resized, effects_bgr)
+                
+                # Convert back to pygame format
+                segmented_rgb = cv2.cvtColor(segmented_frame, cv2.COLOR_BGR2RGB)
+                segmented_surface = pygame.surfarray.make_surface(segmented_rgb.swapaxes(0, 1))
+                
+                # Blit the segmented result to main screen (overwriting the visual effects)
+                self.screen.blit(segmented_surface, (0, 0))
+                
+        except Exception as e:
+            # If segmentation fails, just continue with normal visual effects
+            print(f"Segmentation overlay error: {e}")
     
     def _render_real_time_displays(self):
         """Render real-time camera and audio displays"""
@@ -532,10 +637,13 @@ class MultiModalStudio:
                 # Update GUI
                 self.gui_manager.update(dt)
                 
-                # Render
+                # Render visual effects
                 self.visual_engine.render(self.screen)
                 
-                # Render real-time camera and audio displays
+                # Apply segmentation to main screen if enabled
+                self._render_segmentation_overlay()
+                
+                # Render real-time camera and audio displays (side panels)
                 self._render_real_time_displays()
                 
                 # Render GUI on top
