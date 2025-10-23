@@ -1,5 +1,4 @@
-# Creative Visualization
-# Camera + Audio + Various Visual Effects
+# Camera + Audio + Some Visual Effects
 
 ## Project Architecture
 
