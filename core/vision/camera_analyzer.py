@@ -17,7 +17,9 @@ class CameraAnalyzer:
                  camera_id: int = 0,
                  resolution: Tuple[int, int] = (640, 480),
                  fps: int = 30,
-                 callback: Optional[Callable] = None):
+                 callback: Optional[Callable] = None,
+                 enable_segmentation: bool = False,
+                 segmentation_background=None):
         """
         Initialize camera analyzer
         
@@ -52,6 +54,20 @@ class CameraAnalyzer:
         self.capture_thread = None
         self.analysis_thread = None
         self.running = False
+
+        # Optional selfie segmentation
+        self.enable_segmentation = enable_segmentation
+        self.segmentation_background = segmentation_background
+        self.segmenter = None
+        if self.enable_segmentation:
+            try:
+                from core.vision.selfie_segmentation import SelfieSegmenter
+                self.segmenter = SelfieSegmenter()
+                print("🪄 Selfie segmentation enabled")
+            except Exception as e:
+                print(f"⚠️ Selfie segmentation unavailable: {e}")
+                self.segmenter = None
+                self.enable_segmentation = False
         
     def start(self) -> bool:
         """Start camera capture and analysis"""
@@ -266,8 +282,18 @@ class CameraAnalyzer:
                 # Get camera frame
                 frame = self.get_current_frame()
                 if frame is not None:
+                    # Optionally apply segmentation before display
+                    display_frame = frame
+                    if self.enable_segmentation and self.segmenter is not None:
+                        try:
+                            bg = self.segmentation_background or (0, 128, 255)
+                            display_frame = self.segmenter.apply(frame, bg)
+                        except Exception as e:
+                            print(f"Segmentation error: {e}")
+                            display_frame = frame
+
                     # Convert OpenCV frame to pygame surface
-                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    frame_rgb = cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB)
                     frame_resized = cv2.resize(frame_rgb, (640, 480))
                     frame_surface = pygame.surfarray.make_surface(frame_resized.swapaxes(0, 1))
                     screen.blit(frame_surface, (80, 60))
