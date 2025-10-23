@@ -1,38 +1,25 @@
-# Multi-Modal Creative Visualization System
-# Camera + Audio + AI Powered Visual Effects
+# Creative Visualization
+# Camera + Audio + Various Visual Effects
 
 ## Project Architecture
 
 This project provides real-time visual effects generation from multiple input sources:
 - **Camera Input**: Motion detection, color analysis, object recognition
 - **Audio Input**: Beat detection, frequency analysis, amplitude tracking  
-- **AI Integration**: Natural language style control, intelligent effect generation
+- **AI Integration**: Style control, effect generation
 
 ## Features
 
-### � Camera Vision
+### Camera Vision
 - Real-time motion tracking
 - Color palette extraction
-- Object and gesture detection
-- Depth-aware particle spawning
 
-### 🎵 Audio Analysis  
-- Multi-band frequency analysis
-- Beat and rhythm detection
+### Audio Analysis  
 - Real-time amplitude monitoring
-- Musical pattern recognition
 
-### 🤖 AI Integration
+### AI Integration
 - Natural language style commands
 - Local LLM integration (LM Studio compatible)
-- Intelligent effect parameter generation
-- Context-aware visual responses
-
-### ✨ Visual Effects
-- Advanced particle systems
-- Multiple rendering modes
-- Real-time style transfer
-- 3D-aware effects
 
 ## Requirements
 
@@ -67,7 +54,6 @@ python main.py
 - **Camera Mode**: Move in front of camera for motion-based effects
 - **Audio Mode**: Play music or make sounds for audio-reactive visuals
 - **Text Commands**: Type natural language to control visual styles
-- **Hybrid Mode**: Combine all inputs for complex interactive art
 
 ## Project Structure
 
@@ -101,40 +87,17 @@ Creative Commons - Share and modify freely
 ## Installation
 
 ### Prerequisites
-- Python 3.7 or higher
+- Python 3.7 +
 - Working microphone for audio input
 - Audio drivers properly installed
 
-### Step 1: Clone or Download
+### Clone or Download
 Download all project files to your desired directory.
 
-### Step 2: Install Dependencies
+### Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
-
-### Step 3: Install PyAudio (if needed)
-PyAudio might require additional steps on some systems:
-
-**Windows:**
-```bash
-pip install pyaudio
-```
-
-**macOS:**
-```bash
-brew install portaudio
-pip install pyaudio
-```
-
-**Linux (Ubuntu/Debian):**
-```bash
-sudo apt-get install portaudio19-dev python3-pyaudio
-pip install pyaudio
-```
-
-## Usage
-
 ### Starting the Application
 ```bash
 python main.py
@@ -243,74 +206,9 @@ Audio Perception/
     └── visualizations/    # Visual frame sequences
 ```
 
-## Troubleshooting
-
-### Common Issues
-
-1. **"Import pygame could not be resolved"**
-   - Install pygame: `pip install pygame`
-
-2. **"Import pyaudio could not be resolved"**
-   - Follow PyAudio installation steps above
-   - On Windows, try: `pip install pipwin` then `pipwin install pyaudio`
-
-3. **No sound being captured**
-   - Check microphone permissions
-   - Verify microphone is working in other applications
-   - Try adjusting system audio input levels
-
-4. **Poor visualization performance**
-   - Reduce the number of elements in settings
-   - Disable particle effects if needed
-   - Close other applications using audio
-
-5. **Database errors**
-   - Ensure write permissions in the project directory
-   - Delete `data/audio_perception.db` to reset (will lose all recordings)
-
-### Performance Optimization
-
-- **Element Count**: Lower values (10-50) for better performance
-- **Size Multiplier**: Smaller values reduce rendering load
-- **Particle Effects**: Disable for lower-end systems
-- **Recording Length**: Longer recordings use more memory
-
-## Development
-
-### Architecture
-
-The application follows a modular design:
-
-- **Audio Module**: Handles PyAudio capture and real-time analysis
-- **Visualization Module**: Pygame-based rendering with customizable effects
-- **Storage Module**: SQLite database with binary file storage
-- **UI Module**: Pygame-GUI interfaces for both modes
-
-### Key Components
-
-1. **AudioAnalyzer**: Real-time audio capture and metric extraction
-2. **VisualizationEngine**: Dynamic visual effect generation
-3. **DataStorage**: Recording session management and persistence
-4. **SingleModeInterface**: Real-time visualization UI
-5. **MultiModeInterface**: Playback and gallery UI
-
-### Extending the System
-
-- **New Visual Effects**: Add to `VisualizationEngine` class
-- **Additional Audio Metrics**: Extend `AudioAnalyzer._analyze_audio()`
-- **New Color Palettes**: Add to `ColorPalette.PALETTES`
-- **Custom Shapes**: Implement in `VisualizationEngine._render_element()`
-
 ## License
 
 This project is open source. Feel free to modify and distribute according to your needs.
 
-## Support
-
-For issues or questions:
-1. Check the troubleshooting section above
-2. Ensure all dependencies are properly installed
-3. Verify audio hardware is working correctly
-4. Check Python version compatibility (3.7+)
 
 Enjoy creating beautiful audio visualizations!
